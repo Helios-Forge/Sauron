@@ -1,0 +1,2130 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "A comprehensive API for managing firearm parts, models, and compatibility.",
+        "title": "Sauron Backend API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/compatibility-check": {
+            "get": {
+                "description": "Check if two parts are compatible for a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Check parts compatibility",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "firearmId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "First Part ID",
+                        "name": "part1",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Second Part ID",
+                        "name": "part2",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/compatibility-rules": {
+            "get": {
+                "description": "Get a list of all compatibility rules in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Get all compatibility rules",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new compatibility rule to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Create a new compatibility rule",
+                "parameters": [
+                    {
+                        "description": "Compatibility Rule Info",
+                        "name": "rule",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/compatibility-rules/firearm/{firearmId}/part/{partId}": {
+            "get": {
+                "description": "Get all compatibility rules for a specific firearm model and part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Get compatibility rules by firearm and part",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "firearmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "partId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/compatibility-rules/part/{partId}": {
+            "get": {
+                "description": "Get all compatibility rules for a specific part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Get compatibility rules by part ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "partId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/compatibility-rules/{id}": {
+            "get": {
+                "description": "Get details of a specific compatibility rule",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Get a compatibility rule by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Compatibility Rule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific compatibility rule",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Update a compatibility rule",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Compatibility Rule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Compatibility Rule Info",
+                        "name": "rule",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific compatibility rule",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Compatibility Rules"
+                ],
+                "summary": "Delete a compatibility rule",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Compatibility Rule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/firearm-models": {
+            "get": {
+                "description": "Get a list of all firearm models in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models"
+                ],
+                "summary": "Get all firearm models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new firearm model to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models"
+                ],
+                "summary": "Create a new firearm model",
+                "parameters": [
+                    {
+                        "description": "Firearm Model Info",
+                        "name": "model",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/firearm-models/{id}": {
+            "get": {
+                "description": "Get details of a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models"
+                ],
+                "summary": "Get a firearm model by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models"
+                ],
+                "summary": "Update a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Firearm Model Info",
+                        "name": "model",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models"
+                ],
+                "summary": "Delete a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings": {
+            "get": {
+                "description": "Get a list of all product listings in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Get all product listings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new product listing to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Create a new product listing",
+                "parameters": [
+                    {
+                        "description": "Product Listing Info",
+                        "name": "listing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/part/{partId}": {
+            "get": {
+                "description": "Get all product listings for a specific part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Get listings by part ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "partId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/prebuilt/{prebuiltId}": {
+            "get": {
+                "description": "Get all product listings for a specific prebuilt firearm",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Get listings by prebuilt ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Prebuilt Firearm ID",
+                        "name": "prebuiltId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/seller/{sellerId}": {
+            "get": {
+                "description": "Get all product listings for a specific seller",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Get listings by seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "sellerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/{id}": {
+            "get": {
+                "description": "Get details of a specific product listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Get a product listing by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product Listing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific product listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Update a product listing",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product Listing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Product Listing Info",
+                        "name": "listing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific product listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Delete a product listing",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product Listing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/{id}/availability": {
+            "patch": {
+                "description": "Update the availability and optionally the price of a specific listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product Listings"
+                ],
+                "summary": "Update listing availability",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product Listing ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Availability Update Info",
+                        "name": "availability",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/prebuilt-firearms": {
+            "get": {
+                "description": "Get a list of all prebuilt firearms in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Get all prebuilt firearms",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new prebuilt firearm to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Create a new prebuilt firearm",
+                "parameters": [
+                    {
+                        "description": "Prebuilt Firearm Info",
+                        "name": "firearm",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/prebuilt-firearms/model/{modelId}": {
+            "get": {
+                "description": "Get all prebuilt firearms for a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Get prebuilt firearms by model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "modelId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/prebuilt-firearms/{id}": {
+            "get": {
+                "description": "Get details of a specific prebuilt firearm",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Get a prebuilt firearm by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Prebuilt Firearm ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific prebuilt firearm",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Update a prebuilt firearm",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Prebuilt Firearm ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Prebuilt Firearm Info",
+                        "name": "firearm",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific prebuilt firearm",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prebuilt Firearms"
+                ],
+                "summary": "Delete a prebuilt firearm",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Prebuilt Firearm ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sellers": {
+            "get": {
+                "description": "Get a list of all sellers in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Get all sellers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new seller to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Create a new seller",
+                "parameters": [
+                    {
+                        "description": "Seller Info",
+                        "name": "seller",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sellers/{id}": {
+            "get": {
+                "description": "Get details of a specific seller",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Get a seller by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific seller",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Update a seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Seller Info",
+                        "name": "seller",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific seller",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Delete a seller",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sellers/{id}/status": {
+            "patch": {
+                "description": "Update the status of a specific seller",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sellers"
+                ],
+                "summary": "Update seller status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Seller ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Status Update Info",
+                        "name": "status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user-suggestions": {
+            "get": {
+                "description": "Get a list of all user suggestions in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Get all user suggestions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new user suggestion to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Create a new user suggestion",
+                "parameters": [
+                    {
+                        "description": "User Suggestion Info",
+                        "name": "suggestion",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user-suggestions/status/{status}": {
+            "get": {
+                "description": "Get all user suggestions with a specific status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Get user suggestions by status",
+                "parameters": [
+                    {
+                        "enum": [
+                            "pending",
+                            "approved",
+                            "rejected"
+                        ],
+                        "type": "string",
+                        "description": "Suggestion Status",
+                        "name": "status",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user-suggestions/{id}": {
+            "get": {
+                "description": "Get details of a specific user suggestion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Get a user suggestion by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User Suggestion ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update details of a specific user suggestion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Update a user suggestion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User Suggestion ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated User Suggestion Info",
+                        "name": "suggestion",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific user suggestion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Delete a user suggestion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User Suggestion ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user-suggestions/{id}/status": {
+            "patch": {
+                "description": "Update the status of a specific user suggestion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User Suggestions"
+                ],
+                "summary": "Update user suggestion status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User Suggestion ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Status Update Info",
+                        "name": "status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "sauron-backend_internal_models.CompatibilityRule": {
+            "description": "Rules defining compatibility between different parts and firearm models",
+            "type": "object",
+            "properties": {
+                "compatible_with_part": {
+                    "description": "Compatible part in the relationship",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
+                        }
+                    ]
+                },
+                "compatible_with_part_id": {
+                    "description": "ID of the part that is compatible with the primary part",
+                    "type": "integer",
+                    "example": 2
+                },
+                "constraint_type": {
+                    "description": "Type of compatibility constraint (e.g., \"required\", \"optional\", \"incompatible\")",
+                    "type": "string",
+                    "example": "required"
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Additional details about the compatibility rule\n@Description JSON object containing specific compatibility details",
+                    "type": "string",
+                    "example": "{\"notes\":\"Must use correct gas system length\",\"caliber_specific\":true}"
+                },
+                "firearm_model": {
+                    "description": "Related firearm model",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    ]
+                },
+                "firearm_model_id": {
+                    "description": "ID of the firearm model this rule applies to",
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "description": "Unique identifier for the compatibility rule",
+                    "type": "integer",
+                    "example": 1
+                },
+                "part": {
+                    "description": "Primary part in the compatibility relationship",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
+                        }
+                    ]
+                },
+                "part_id": {
+                    "description": "ID of the primary part in this compatibility rule",
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                }
+            }
+        },
+        "sauron-backend_internal_models.FirearmModel": {
+            "description": "Firearm model information including required and compatible parts",
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "Category of the firearm",
+                    "type": "string",
+                    "example": "Assault Rifles"
+                },
+                "compatible_parts": {
+                    "description": "List of compatible parts for this firearm model\n@Description JSON array of compatible part categories",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "['5.56 NATO'",
+                        " '.223 Remington']"
+                    ]
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Unique identifier for the firearm model",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "Name of the firearm model",
+                    "type": "string",
+                    "example": "AR-15"
+                },
+                "required_parts": {
+                    "description": "List of required parts for this firearm model\n@Description JSON array of required part names",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "['Upper Receiver'",
+                        " 'Lower Receiver'",
+                        " 'Bolt Carrier Group']"
+                    ]
+                },
+                "subcategory": {
+                    "description": "Subcategory of the firearm",
+                    "type": "string",
+                    "example": "Semi-Automatic"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                },
+                "variant": {
+                    "description": "Variant of the firearm model",
+                    "type": "string",
+                    "example": "M4"
+                }
+            }
+        },
+        "sauron-backend_internal_models.Part": {
+            "description": "Detailed information about a firearm part including compatibility and restrictions",
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "Main category of the part",
+                    "type": "string",
+                    "example": "Upper Assembly"
+                },
+                "compatibility": {
+                    "description": "Compatibility information with other parts and models\n@Description JSON object containing compatibility rules",
+                    "type": "string",
+                    "example": "{\"firearm_models\":[\"AR-15\",\"M4\"],\"calibers\":[\"5.56 NATO\"]}"
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Unique identifier for the part",
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_prebuilt": {
+                    "description": "Whether this is a pre-built component",
+                    "type": "boolean",
+                    "example": false
+                },
+                "legal_restrictions": {
+                    "description": "Legal restrictions or requirements for this part\n@Description JSON object containing legal restriction details",
+                    "type": "string",
+                    "example": "{\"restricted_states\":[\"CA\",\"NY\"],\"license_required\":true}"
+                },
+                "name": {
+                    "description": "Name of the part",
+                    "type": "string",
+                    "example": "Bolt Carrier Group"
+                },
+                "required_sub_components": {
+                    "description": "List of required sub-components for this part\n@Description JSON array of required sub-component names",
+                    "type": "string",
+                    "example": "[\"bolt\",\"carrier\",\"firing pin\"]"
+                },
+                "sub_components": {
+                    "description": "List of sub-components that make up this part\n@Description JSON array of sub-component details",
+                    "type": "string",
+                    "example": "{\"pins\":[\"firing pin\",\"cam pin\"],\"springs\":[\"extractor spring\"]}"
+                },
+                "subcategory": {
+                    "description": "Subcategory for more specific classification",
+                    "type": "string",
+                    "example": "Bolt Carrier Group"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                }
+            }
+        },
+        "sauron-backend_internal_models.PrebuiltFirearm": {
+            "description": "Complete firearm configuration with specific components",
+            "type": "object",
+            "properties": {
+                "components": {
+                    "description": "List of components included in this build\n@Description JSON object containing component details and specifications",
+                    "type": "string",
+                    "example": "{\"upper_receiver\":\"BCM Complete Upper\",\"lower_receiver\":\"Aero M4E1\",\"barrel\":\"16 inch 5.56 NATO\"}"
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "firearm_model": {
+                    "description": "Base firearm model",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                        }
+                    ]
+                },
+                "firearm_model_id": {
+                    "description": "ID of the base firearm model",
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "description": "Unique identifier for the prebuilt firearm",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "Name of the prebuilt configuration",
+                    "type": "string",
+                    "example": "Custom AR-15 Build"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                }
+            }
+        },
+        "sauron-backend_internal_models.ProductListing": {
+            "description": "Product listing information including pricing and availability",
+            "type": "object",
+            "properties": {
+                "additional_info": {
+                    "description": "Additional seller-specific information\n@Description JSON object containing additional product details",
+                    "type": "string",
+                    "example": "{\"condition\":\"new\",\"warranty\":\"lifetime\",\"made_in_usa\":true}"
+                },
+                "availability": {
+                    "description": "Current availability status (in_stock, out_of_stock, backorder)",
+                    "type": "string",
+                    "example": "in_stock"
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "Currency of the price",
+                    "type": "string",
+                    "example": "USD"
+                },
+                "id": {
+                    "description": "Unique identifier for the product listing",
+                    "type": "integer",
+                    "example": 1
+                },
+                "last_checked": {
+                    "description": "Last time the listing was checked/updated",
+                    "type": "string"
+                },
+                "part": {
+                    "description": "Related part information if this is a part listing",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
+                        }
+                    ]
+                },
+                "part_id": {
+                    "description": "Optional: ID of the part if this listing is for a part",
+                    "type": "integer",
+                    "example": 1
+                },
+                "prebuilt_firearm": {
+                    "description": "Related prebuilt firearm information if this is a prebuilt listing",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                        }
+                    ]
+                },
+                "prebuilt_id": {
+                    "description": "Optional: ID of the prebuilt firearm if this listing is for a prebuilt",
+                    "type": "integer",
+                    "example": 1
+                },
+                "price": {
+                    "description": "Current price of the product",
+                    "type": "number",
+                    "example": 129.99
+                },
+                "seller": {
+                    "description": "Related seller information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                        }
+                    ]
+                },
+                "seller_id": {
+                    "description": "ID of the seller offering this product",
+                    "type": "integer",
+                    "example": 1
+                },
+                "shipping_info": {
+                    "description": "Shipping information\n@Description JSON object containing shipping details",
+                    "type": "string",
+                    "example": "{\"free_shipping\":true,\"shipping_cost\":0,\"handling_time\":\"1-3 business days\"}"
+                },
+                "sku": {
+                    "description": "Seller's SKU for the product",
+                    "type": "string",
+                    "example": "BRN-BCG-01"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "URL to the product on the seller's website",
+                    "type": "string",
+                    "example": "https://www.brownells.com/products/bcg-standard"
+                }
+            }
+        },
+        "sauron-backend_internal_models.Seller": {
+            "description": "Information about sellers and their API integrations",
+            "type": "object",
+            "properties": {
+                "api_endpoint": {
+                    "description": "API endpoint for the seller's integration",
+                    "type": "string",
+                    "example": "https://api.brownells.com/v1"
+                },
+                "api_key": {
+                    "description": "Encrypted API key for authentication",
+                    "type": "string",
+                    "example": "encrypted_api_key_here"
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Unique identifier for the seller",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "Name of the seller",
+                    "type": "string",
+                    "example": "Brownells"
+                },
+                "settings": {
+                    "description": "Additional seller-specific settings\n@Description JSON object containing seller configuration",
+                    "type": "string",
+                    "example": "{\"api_version\":\"v1\",\"update_frequency\":\"daily\",\"preferred_currency\":\"USD\"}"
+                },
+                "status": {
+                    "description": "Current status of the seller (active, inactive, suspended)",
+                    "type": "string",
+                    "example": "active"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                },
+                "website": {
+                    "description": "Website URL of the seller",
+                    "type": "string",
+                    "example": "https://www.brownells.com"
+                }
+            }
+        },
+        "sauron-backend_internal_models.UserSuggestion": {
+            "description": "User suggestions for new content or improvements",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Unique identifier for the suggestion",
+                    "type": "integer",
+                    "example": 1
+                },
+                "model_name": {
+                    "description": "Name of the suggested model or part",
+                    "type": "string",
+                    "example": "New AR-15 Variant"
+                },
+                "status": {
+                    "description": "Current status of the suggestion (pending, approved, rejected)",
+                    "type": "string",
+                    "example": "pending"
+                },
+                "suggested_parts": {
+                    "description": "List of suggested parts or modifications\n@Description JSON object containing detailed suggestions",
+                    "type": "string",
+                    "example": "{\"parts\":[\"Custom Handguard\",\"Modified BCG\"],\"modifications\":[\"Enhanced Feed Ramps\"]}"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
+    }
+}

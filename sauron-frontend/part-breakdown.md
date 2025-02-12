@@ -1,0 +1,264 @@
+### Upper Assembly
+- **Bolt Carrier Group (BCG)**
+  - Bolt
+  - Bolt Carrier
+  - Firing Pin
+  - Firing Pin Retaining Pin
+  - Cam Pin
+  - Gas Key
+  - Gas Key Screws
+  - Extractor
+  - Extractor Spring
+  - Extractor Pin
+  - Ejector
+  - Ejector Spring
+  - Ejector Roll Pin
+- **Barrel**
+  - Barrel Extension
+  - Barrel Nut
+  - Gas Block
+  - Gas Tube
+  - Muzzle Device
+    - Flash Suppressor
+    - Muzzle Brake
+    - Compensator
+    - Silencer/Suppressor (if legally applicable)
+  - Thread Protector
+  - Barrel Shroud (for pistols/shotguns)
+- **Handguard/Foregrip**
+  - Free-Float Handguard
+  - Drop-In Handguard
+  - Rail System (e.g., Picatinny, M-LOK, KeyMod)
+  - Heat Shield
+  - Foregrip (Vertical or Angled)
+- **Upper Receiver**
+  - Stripped Upper Receiver
+  - Complete Upper Receiver
+  - Forward Assist
+  - Forward Assist Spring
+  - Forward Assist Pin
+  - Dust Cover
+  - Dust Cover Spring
+  - Dust Cover Pin
+  - Charging Handle
+  - Charging Handle Latch
+- **Gas System**
+  - Gas Tube (Carbine, Mid-Length, Rifle-Length)
+  - Gas Block (Low-Profile, Adjustable)
+  - Gas Piston (for piston-driven systems)
+  - Gas Rings (on bolt)
+
+### Lower Assembly
+- **Lower Receiver**
+  - Stripped Lower Receiver
+  - Complete Lower Receiver
+  - Receiver Extension (Buffer Tube)
+  - Buffer Tube Castle Nut
+  - Buffer Tube End Plate
+- **Trigger Assembly**
+  - Trigger
+  - Trigger Spring
+  - Trigger Pin
+  - Hammer
+  - Hammer Spring
+  - Hammer Pin
+  - Disconnector
+  - Disconnector Spring
+  - Trigger Guard
+  - Trigger Guard Roll Pin
+- **Fire Control Group (FCG)**
+  - Safety Selector
+  - Safety Selector Detent
+  - Safety Selector Spring
+  - Single-Stage Trigger Kit
+  - Two-Stage Trigger Kit
+- **Magazine Release**
+  - Magazine Catch
+  - Magazine Catch Spring
+  - Magazine Catch Button
+- **Bolt Catch**
+  - Bolt Catch
+  - Bolt Catch Spring
+  - Bolt Catch Roll Pin
+  - Bolt Catch Plunger
+- **Buffer System**
+  - Buffer
+  - Buffer Spring
+  - Buffer Retainer
+  - Buffer Retainer Spring
+- **Pistol Grip**
+  - Grip
+  - Grip Screw
+  - Grip Washer
+- **Stock**
+  - Fixed Stock
+  - Collapsible Stock
+  - Folding Stock
+  - Stock Latch
+  - Cheek Riser
+  - Recoil Pad
+
+### Sights and Optics
+- **Iron Sights**
+  - Front Sight Post
+  - Front Sight Base
+  - Rear Sight Aperture
+  - Rear Sight Base
+  - Sight Adjustment Tool
+- **Optical Sights**
+  - Red Dot Sight
+  - Holographic Sight
+  - Reflex Sight
+  - Magnified Scope (e.g., 1-4x, 3-9x)
+  - Night Vision Scope
+  - Thermal Scope
+- **Mounting Systems**
+  - Scope Rings
+  - Scope Mount (Cantilever, Quick-Detach)
+  - Rail Riser
+  - Optic Base Plate (for pistols)
+- **Accessories**
+  - Lens Covers
+  - Anti-Reflective Device (ARD)
+  - Kill Flash
+  - Scope Turret Caps
+
+### Magazines and Feeding Devices
+- **Magazines**
+  - Detachable Box Magazine
+  - Drum Magazine
+  - Extended Magazine
+  - Magazine Base Pad
+  - Magazine Follower
+  - Magazine Spring
+- **Shotgun Shell Holders**
+  - Side Saddle
+  - Shell Carrier
+- **Speed Loaders (for Revolvers)**
+  - Circular Speed Loader
+  - Strip Speed Loader
+- **Magazine Accessories**
+  - Magazine Coupler
+  - Magazine Loader/Unloader
+  - Magazine Extension Tube
+
+### Muzzle Devices and Barrel Accessories
+- **Muzzle Devices**
+  - Flash Hider
+  - Muzzle Brake
+  - Compensator
+  - Suppressor (regulated)
+  - Linear Compensator
+- **Barrel Accessories**
+  - Barrel Nut Wrench
+  - Barrel Shims
+  - Crush Washer
+  - Peel Washer
+  - Thread Adapter
+
+### Rails and Mounting Accessories
+- **Rail Systems**
+  - Picatinny Rail Section
+  - M-LOK Rail Section
+  - KeyMod Rail Section
+- **Mounts**
+  - Light Mount
+  - Laser Mount
+  - Bipod Mount
+  - Sling Swivel Mount
+- **Adapters**
+  - Rail-to-Rail Adapter
+  - Quick-Detach Sling Adapter
+
+### Grips and Ergonomics
+- **Pistol Grips**
+  - Standard Pistol Grip
+  - Ergonomic Grip
+  - Beavertail Grip (for pistols)
+- **Foregrips**
+  - Vertical Foregrip
+  - Angled Foregrip
+  - Hand Stop
+- **Stock Accessories**
+  - Cheek Pad
+  - Butt Plate
+  - Stock Spacer
+
+### Action Components (Specific to Firearm Type)
+- **Bolt-Action Rifle**
+  - Bolt Body
+  - Bolt Handle
+  - Bolt Knob
+  - Bolt Sleeve
+  - Firing Pin Assembly
+- **Shotgun**
+  - Action Bar
+  - Forend
+  - Choke Tube
+  - Choke Tube Wrench
+- **Revolver**
+  - Cylinder
+  - Crane/Yoke
+  - Extractor Rod
+  - Cylinder Release Latch
+- **Lever-Action**
+  - Lever
+  - Lever Spring
+  - Loading Gate
+
+### Frame and Slide (for Pistols)
+- **Frame**
+  - Polymer Frame
+  - Metal Frame
+  - Frame Pins
+  - Slide Stop
+  - Slide Stop Spring
+- **Slide**
+  - Stripped Slide
+  - Complete Slide
+  - Slide Cover Plate
+  - Recoil Spring
+  - Recoil Spring Guide
+  - Extractor Depressor Plunger
+- **Barrel (Pistol-Specific)**
+  - Threaded Barrel
+  - Ported Barrel
+  - Match-Grade Barrel
+
+### Miscellaneous Accessories
+- **Slings**
+  - Single-Point Sling
+  - Two-Point Sling
+  - Three-Point Sling
+  - Sling Swivel
+- **Bipods and Tripods**
+  - Folding Bipod
+  - Adjustable Bipod
+  - Tripod Adapter
+- **Lights and Lasers**
+  - Weapon Light
+  - Laser Sight
+  - IR Illuminator
+  - Pressure Switch
+- **Holsters (for Pistols/Revolvers)**
+  - Inside-the-Waistband (IWB) Holster
+  - Outside-the-Waistband (OWB) Holster
+  - Shoulder Holster
+  - Ankle Holster
+- **Cleaning and Maintenance**
+  - Bore Brush
+  - Cleaning Rod
+  - Patch Holder
+  - Cleaning Jag
+  - Bore Snake
+
+### Specialty Parts (for Niche Firearms)
+- **Black Powder/Muzzleloader**
+  - Breech Plug
+  - Nipple
+  - Flintlock Mechanism
+  - Percussion Cap Holder
+- **Machine Gun (Regulated)**
+  - Sear
+  - Auto Sear Spring
+  - Rate Reducer
