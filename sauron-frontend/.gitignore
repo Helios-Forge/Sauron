@@ -1,5 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Code Editor Exceptions
+/.cursor
+/.qodo
+/.vscode
+
 # dependencies
 /node_modules
 /.pnp
