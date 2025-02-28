@@ -1,0 +1,1473 @@
+basePath: /
+definitions:
+  sauron-backend_internal_models.CompatibilityRule:
+    description: Rules defining compatibility between different parts and firearm
+      models
+    properties:
+      compatible_with_part:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.Part'
+        description: Compatible part in the relationship
+      compatible_with_part_id:
+        description: ID of the part that is compatible with the primary part
+        example: 2
+        type: integer
+      constraint_type:
+        description: Type of compatibility constraint (e.g., "required", "optional",
+          "incompatible")
+        example: required
+        type: string
+      created_at:
+        description: Creation timestamp
+        type: string
+      details:
+        description: |-
+          Additional details about the compatibility rule
+          @Description JSON object containing specific compatibility details
+        example: '{"notes":"Must use correct gas system length","caliber_specific":true}'
+        type: string
+      firearm_model:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+        description: Related firearm model
+      firearm_model_id:
+        description: ID of the firearm model this rule applies to
+        example: 1
+        type: integer
+      id:
+        description: Unique identifier for the compatibility rule
+        example: 1
+        type: integer
+      part:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.Part'
+        description: Primary part in the compatibility relationship
+      part_id:
+        description: ID of the primary part in this compatibility rule
+        example: 1
+        type: integer
+      updated_at:
+        description: Last update timestamp
+        type: string
+    type: object
+  sauron-backend_internal_models.FirearmModel:
+    description: Firearm model information including required and compatible parts
+    properties:
+      category:
+        description: Category of the firearm
+        example: Assault Rifles
+        type: string
+      compatible_parts:
+        description: |-
+          List of compatible parts for this firearm model
+          @Description JSON array of compatible part categories
+        example:
+        - '[''5.56 NATO'''
+        - ' ''.223 Remington'']'
+        items:
+          type: string
+        type: array
+      created_at:
+        description: Creation timestamp
+        type: string
+      id:
+        description: Unique identifier for the firearm model
+        example: 1
+        type: integer
+      name:
+        description: Name of the firearm model
+        example: AR-15
+        type: string
+      required_parts:
+        description: |-
+          List of required parts for this firearm model
+          @Description JSON array of required part names
+        example:
+        - '[''Upper Receiver'''
+        - ' ''Lower Receiver'''
+        - ' ''Bolt Carrier Group'']'
+        items:
+          type: string
+        type: array
+      subcategory:
+        description: Subcategory of the firearm
+        example: Semi-Automatic
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+      variant:
+        description: Variant of the firearm model
+        example: M4
+        type: string
+    type: object
+  sauron-backend_internal_models.Part:
+    description: Detailed information about a firearm part including compatibility
+      and restrictions
+    properties:
+      category:
+        description: Main category of the part
+        example: Upper Assembly
+        type: string
+      compatibility:
+        description: |-
+          Compatibility information with other parts and models
+          @Description JSON object containing compatibility rules
+        example: '{"firearm_models":["AR-15","M4"],"calibers":["5.56 NATO"]}'
+        type: string
+      created_at:
+        description: Creation timestamp
+        type: string
+      id:
+        description: Unique identifier for the part
+        example: 1
+        type: integer
+      is_prebuilt:
+        description: Whether this is a pre-built component
+        example: false
+        type: boolean
+      legal_restrictions:
+        description: |-
+          Legal restrictions or requirements for this part
+          @Description JSON object containing legal restriction details
+        example: '{"restricted_states":["CA","NY"],"license_required":true}'
+        type: string
+      name:
+        description: Name of the part
+        example: Bolt Carrier Group
+        type: string
+      required_sub_components:
+        description: |-
+          List of required sub-components for this part
+          @Description JSON array of required sub-component names
+        example: '["bolt","carrier","firing pin"]'
+        type: string
+      sub_components:
+        description: |-
+          List of sub-components that make up this part
+          @Description JSON array of sub-component details
+        example: '{"pins":["firing pin","cam pin"],"springs":["extractor spring"]}'
+        type: string
+      subcategory:
+        description: Subcategory for more specific classification
+        example: Bolt Carrier Group
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+    type: object
+  sauron-backend_internal_models.PrebuiltFirearm:
+    description: Complete firearm configuration with specific components
+    properties:
+      components:
+        description: |-
+          List of components included in this build
+          @Description JSON object containing component details and specifications
+        example: '{"upper_receiver":"BCM Complete Upper","lower_receiver":"Aero M4E1","barrel":"16
+          inch 5.56 NATO"}'
+        type: string
+      created_at:
+        description: Creation timestamp
+        type: string
+      firearm_model:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+        description: Base firearm model
+      firearm_model_id:
+        description: ID of the base firearm model
+        example: 1
+        type: integer
+      id:
+        description: Unique identifier for the prebuilt firearm
+        example: 1
+        type: integer
+      name:
+        description: Name of the prebuilt configuration
+        example: Custom AR-15 Build
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+    type: object
+  sauron-backend_internal_models.ProductListing:
+    description: Product listing information including pricing and availability
+    properties:
+      additional_info:
+        description: |-
+          Additional seller-specific information
+          @Description JSON object containing additional product details
+        example: '{"condition":"new","warranty":"lifetime","made_in_usa":true}'
+        type: string
+      availability:
+        description: Current availability status (in_stock, out_of_stock, backorder)
+        example: in_stock
+        type: string
+      created_at:
+        description: Creation timestamp
+        type: string
+      currency:
+        description: Currency of the price
+        example: USD
+        type: string
+      id:
+        description: Unique identifier for the product listing
+        example: 1
+        type: integer
+      last_checked:
+        description: Last time the listing was checked/updated
+        type: string
+      part:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.Part'
+        description: Related part information if this is a part listing
+      part_id:
+        description: 'Optional: ID of the part if this listing is for a part'
+        example: 1
+        type: integer
+      prebuilt_firearm:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+        description: Related prebuilt firearm information if this is a prebuilt listing
+      prebuilt_id:
+        description: 'Optional: ID of the prebuilt firearm if this listing is for
+          a prebuilt'
+        example: 1
+        type: integer
+      price:
+        description: Current price of the product
+        example: 129.99
+        type: number
+      seller:
+        allOf:
+        - $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        description: Related seller information
+      seller_id:
+        description: ID of the seller offering this product
+        example: 1
+        type: integer
+      shipping_info:
+        description: |-
+          Shipping information
+          @Description JSON object containing shipping details
+        example: '{"free_shipping":true,"shipping_cost":0,"handling_time":"1-3 business
+          days"}'
+        type: string
+      sku:
+        description: Seller's SKU for the product
+        example: BRN-BCG-01
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+      url:
+        description: URL to the product on the seller's website
+        example: https://www.brownells.com/products/bcg-standard
+        type: string
+    type: object
+  sauron-backend_internal_models.Seller:
+    description: Information about sellers and their API integrations
+    properties:
+      api_endpoint:
+        description: API endpoint for the seller's integration
+        example: https://api.brownells.com/v1
+        type: string
+      api_key:
+        description: Encrypted API key for authentication
+        example: encrypted_api_key_here
+        type: string
+      created_at:
+        description: Creation timestamp
+        type: string
+      id:
+        description: Unique identifier for the seller
+        example: 1
+        type: integer
+      name:
+        description: Name of the seller
+        example: Brownells
+        type: string
+      settings:
+        description: |-
+          Additional seller-specific settings
+          @Description JSON object containing seller configuration
+        example: '{"api_version":"v1","update_frequency":"daily","preferred_currency":"USD"}'
+        type: string
+      status:
+        description: Current status of the seller (active, inactive, suspended)
+        example: active
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+      website:
+        description: Website URL of the seller
+        example: https://www.brownells.com
+        type: string
+    type: object
+  sauron-backend_internal_models.UserSuggestion:
+    description: User suggestions for new content or improvements
+    properties:
+      created_at:
+        description: Creation timestamp
+        type: string
+      id:
+        description: Unique identifier for the suggestion
+        example: 1
+        type: integer
+      model_name:
+        description: Name of the suggested model or part
+        example: New AR-15 Variant
+        type: string
+      status:
+        description: Current status of the suggestion (pending, approved, rejected)
+        example: pending
+        type: string
+      suggested_parts:
+        description: |-
+          List of suggested parts or modifications
+          @Description JSON object containing detailed suggestions
+        example: '{"parts":["Custom Handguard","Modified BCG"],"modifications":["Enhanced
+          Feed Ramps"]}'
+        type: string
+      updated_at:
+        description: Last update timestamp
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A comprehensive API for managing firearm parts, models, and compatibility.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Sauron Backend API
+  version: "1.0"
+paths:
+  /compatibility-check:
+    get:
+      consumes:
+      - application/json
+      description: Check if two parts are compatible for a specific firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: query
+        name: firearmId
+        required: true
+        type: integer
+      - description: First Part ID
+        in: query
+        name: part1
+        required: true
+        type: integer
+      - description: Second Part ID
+        in: query
+        name: part2
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check parts compatibility
+      tags:
+      - Compatibility Rules
+  /compatibility-rules:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all compatibility rules in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+            type: array
+      summary: Get all compatibility rules
+      tags:
+      - Compatibility Rules
+    post:
+      consumes:
+      - application/json
+      description: Add a new compatibility rule to the database
+      parameters:
+      - description: Compatibility Rule Info
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new compatibility rule
+      tags:
+      - Compatibility Rules
+  /compatibility-rules/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific compatibility rule
+      parameters:
+      - description: Compatibility Rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a compatibility rule
+      tags:
+      - Compatibility Rules
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific compatibility rule
+      parameters:
+      - description: Compatibility Rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a compatibility rule by ID
+      tags:
+      - Compatibility Rules
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific compatibility rule
+      parameters:
+      - description: Compatibility Rule ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Compatibility Rule Info
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a compatibility rule
+      tags:
+      - Compatibility Rules
+  /compatibility-rules/firearm/{firearmId}/part/{partId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all compatibility rules for a specific firearm model and part
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: firearmId
+        required: true
+        type: integer
+      - description: Part ID
+        in: path
+        name: partId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+            type: array
+      summary: Get compatibility rules by firearm and part
+      tags:
+      - Compatibility Rules
+  /compatibility-rules/part/{partId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all compatibility rules for a specific part
+      parameters:
+      - description: Part ID
+        in: path
+        name: partId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
+            type: array
+      summary: Get compatibility rules by part ID
+      tags:
+      - Compatibility Rules
+  /firearm-models:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all firearm models in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+            type: array
+      summary: Get all firearm models
+      tags:
+      - Firearm Models
+    post:
+      consumes:
+      - application/json
+      description: Add a new firearm model to the database
+      parameters:
+      - description: Firearm Model Info
+        in: body
+        name: model
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new firearm model
+      tags:
+      - Firearm Models
+  /firearm-models/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a firearm model
+      tags:
+      - Firearm Models
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a firearm model by ID
+      tags:
+      - Firearm Models
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Firearm Model Info
+        in: body
+        name: model
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a firearm model
+      tags:
+      - Firearm Models
+  /listings:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all product listings in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            type: array
+      summary: Get all product listings
+      tags:
+      - Product Listings
+    post:
+      consumes:
+      - application/json
+      description: Add a new product listing to the database
+      parameters:
+      - description: Product Listing Info
+        in: body
+        name: listing
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new product listing
+      tags:
+      - Product Listings
+  /listings/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific product listing
+      parameters:
+      - description: Product Listing ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a product listing
+      tags:
+      - Product Listings
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific product listing
+      parameters:
+      - description: Product Listing ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a product listing by ID
+      tags:
+      - Product Listings
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific product listing
+      parameters:
+      - description: Product Listing ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Product Listing Info
+        in: body
+        name: listing
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a product listing
+      tags:
+      - Product Listings
+  /listings/{id}/availability:
+    patch:
+      consumes:
+      - application/json
+      description: Update the availability and optionally the price of a specific
+        listing
+      parameters:
+      - description: Product Listing ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Availability Update Info
+        in: body
+        name: availability
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update listing availability
+      tags:
+      - Product Listings
+  /listings/part/{partId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all product listings for a specific part
+      parameters:
+      - description: Part ID
+        in: path
+        name: partId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            type: array
+      summary: Get listings by part ID
+      tags:
+      - Product Listings
+  /listings/prebuilt/{prebuiltId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all product listings for a specific prebuilt firearm
+      parameters:
+      - description: Prebuilt Firearm ID
+        in: path
+        name: prebuiltId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            type: array
+      summary: Get listings by prebuilt ID
+      tags:
+      - Product Listings
+  /listings/seller/{sellerId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all product listings for a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: sellerId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            type: array
+      summary: Get listings by seller
+      tags:
+      - Product Listings
+  /prebuilt-firearms:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all prebuilt firearms in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+            type: array
+      summary: Get all prebuilt firearms
+      tags:
+      - Prebuilt Firearms
+    post:
+      consumes:
+      - application/json
+      description: Add a new prebuilt firearm to the database
+      parameters:
+      - description: Prebuilt Firearm Info
+        in: body
+        name: firearm
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new prebuilt firearm
+      tags:
+      - Prebuilt Firearms
+  /prebuilt-firearms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific prebuilt firearm
+      parameters:
+      - description: Prebuilt Firearm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a prebuilt firearm
+      tags:
+      - Prebuilt Firearms
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific prebuilt firearm
+      parameters:
+      - description: Prebuilt Firearm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a prebuilt firearm by ID
+      tags:
+      - Prebuilt Firearms
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific prebuilt firearm
+      parameters:
+      - description: Prebuilt Firearm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Prebuilt Firearm Info
+        in: body
+        name: firearm
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a prebuilt firearm
+      tags:
+      - Prebuilt Firearms
+  /prebuilt-firearms/model/{modelId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all prebuilt firearms for a specific firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: modelId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+            type: array
+      summary: Get prebuilt firearms by model
+      tags:
+      - Prebuilt Firearms
+  /sellers:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all sellers in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.Seller'
+            type: array
+      summary: Get all sellers
+      tags:
+      - Sellers
+    post:
+      consumes:
+      - application/json
+      description: Add a new seller to the database
+      parameters:
+      - description: Seller Info
+        in: body
+        name: seller
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.Seller'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new seller
+      tags:
+      - Sellers
+  /sellers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a seller
+      tags:
+      - Sellers
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a seller by ID
+      tags:
+      - Sellers
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Seller Info
+        in: body
+        name: seller
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.Seller'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a seller
+      tags:
+      - Sellers
+  /sellers/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update the status of a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status Update Info
+        in: body
+        name: status
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update seller status
+      tags:
+      - Sellers
+  /user-suggestions:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all user suggestions in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            type: array
+      summary: Get all user suggestions
+      tags:
+      - User Suggestions
+    post:
+      consumes:
+      - application/json
+      description: Add a new user suggestion to the database
+      parameters:
+      - description: User Suggestion Info
+        in: body
+        name: suggestion
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new user suggestion
+      tags:
+      - User Suggestions
+  /user-suggestions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific user suggestion
+      parameters:
+      - description: User Suggestion ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a user suggestion
+      tags:
+      - User Suggestions
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific user suggestion
+      parameters:
+      - description: User Suggestion ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a user suggestion by ID
+      tags:
+      - User Suggestions
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific user suggestion
+      parameters:
+      - description: User Suggestion ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated User Suggestion Info
+        in: body
+        name: suggestion
+        required: true
+        schema:
+          $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a user suggestion
+      tags:
+      - User Suggestions
+  /user-suggestions/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update the status of a specific user suggestion
+      parameters:
+      - description: User Suggestion ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status Update Info
+        in: body
+        name: status
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update user suggestion status
+      tags:
+      - User Suggestions
+  /user-suggestions/status/{status}:
+    get:
+      consumes:
+      - application/json
+      description: Get all user suggestions with a specific status
+      parameters:
+      - description: Suggestion Status
+        enum:
+        - pending
+        - approved
+        - rejected
+        in: path
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            type: array
+      summary: Get user suggestions by status
+      tags:
+      - User Suggestions
+schemes:
+- http
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
