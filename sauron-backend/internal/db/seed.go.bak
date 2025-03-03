@@ -98,6 +98,109 @@ var partCategories = map[string][]string{
 	},
 }
 
+// compatibilityTemplates defines templates for firearm model compatibility
+var compatibilityTemplates = map[string]map[string][]string{
+	// AR-15 Platform
+	"Colt AR-15": {
+		"required_parts": {
+			"Lower Receiver", "Upper Receiver", "Barrel", "Bolt Carrier Group",
+			"Charging Handle", "Buffer Assembly", "Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Handguards", "Muzzle Devices", "Optics", "Grips", "Magazines", "Triggers",
+		},
+	},
+	"Smith & Wesson M&P15": {
+		"required_parts": {
+			"Lower Receiver", "Upper Receiver", "Barrel", "Bolt Carrier Group",
+			"Charging Handle", "Buffer Assembly", "Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Handguards", "Muzzle Devices", "Optics", "Grips", "Magazines", "Triggers",
+		},
+	},
+
+	// AK Platform
+	"Arsenal AK-47": {
+		"required_parts": {
+			"Receiver", "Barrel", "Bolt Carrier Group", "Gas System",
+			"Trigger Group", "Stock", "Handguard",
+		},
+		"compatible_parts": {
+			"Muzzle Devices", "Optic Mounts", "Grips", "Magazines", "Triggers",
+		},
+	},
+	"Zastava ZPAP M70": {
+		"required_parts": {
+			"Receiver", "Barrel", "Bolt Carrier Group", "Gas System",
+			"Trigger Group", "Stock", "Handguard",
+		},
+		"compatible_parts": {
+			"Muzzle Devices", "Optic Mounts", "Grips", "Magazines", "Triggers",
+		},
+	},
+
+	// Glock Pistols
+	"Glock 19": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring Assembly",
+			"Trigger Assembly", "Magazine",
+		},
+		"compatible_parts": {
+			"Sights", "Optic Cuts", "Threaded Barrels", "Extended Magazines", "Triggers",
+		},
+	},
+	"Glock 17": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring Assembly",
+			"Trigger Assembly", "Magazine",
+		},
+		"compatible_parts": {
+			"Sights", "Optic Cuts", "Threaded Barrels", "Extended Magazines", "Triggers",
+		},
+	},
+
+	// 1911 Pistols
+	"Colt 1911": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring",
+			"Trigger Assembly", "Magazine", "Grips",
+		},
+		"compatible_parts": {
+			"Sights", "Trigger Kits", "Hammers", "Grip Safeties", "Mainspring Housings",
+		},
+	},
+
+	// Shotguns
+	"Mossberg 500": {
+		"required_parts": {
+			"Receiver", "Barrel", "Pump Action", "Magazine Tube",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Forends", "Choke Tubes", "Shell Carriers", "Recoil Pads", "Sights",
+		},
+	},
+	"Remington 870": {
+		"required_parts": {
+			"Receiver", "Barrel", "Pump Action", "Magazine Tube",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Forends", "Choke Tubes", "Shell Carriers", "Recoil Pads", "Sights",
+		},
+	},
+	"Benelli M4": {
+		"required_parts": {
+			"Receiver", "Barrel", "Gas System", "Bolt Assembly",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Magazine Extensions", "Choke Tubes", "Recoil Pads", "Sights", "Optic Mounts",
+		},
+	},
+}
+
 // getDefaultCaliberForModel returns appropriate caliber based on the firearm model name
 func getDefaultCaliberForModel(modelName string) string {
 	// AR platform rifles typically come in 5.56 NATO
@@ -179,7 +282,6 @@ func SeedDatabase() {
 		// Parse the category to extract main category and subcategory
 		var mainCategory, subCategory string
 
-		// Determine main category and subcategory based on naming pattern
 		if strings.Contains(category, "Rifles") {
 			mainCategory = "Rifles"
 			subCategory = strings.TrimSuffix(category, " Rifles")
@@ -191,37 +293,119 @@ func SeedDatabase() {
 			subCategory = "Revolver"
 		} else if category == "Shotguns" {
 			mainCategory = "Shotguns"
-			// Default to Pump Action for shotguns unless specified otherwise
+			// Determine subcategory based on model name - most are pump action by default
 			subCategory = "Pump-Action"
 		}
 
 		for _, modelName := range modelNames {
-			// Special case for shotguns - Benelli and Beretta are typically semi-auto
+			// Special case for shotguns - Benelli and Beretta are semi-auto
 			if category == "Shotguns" && (strings.Contains(modelName, "Benelli") || strings.Contains(modelName, "Beretta")) {
 				subCategory = "Semi-Auto"
 			}
 
-			// Create specifications object with caliber information
+			// Create specifications
 			specs := map[string]interface{}{
 				"caliber": getDefaultCaliberForModel(modelName),
 				"weight":  fmt.Sprintf("%.1f lbs", 5+rand.Float64()*5),
 			}
 			specsJSON, _ := json.Marshal(specs)
 
-			// Create default required and compatible parts
-			requiredParts := map[string]bool{"Basic Parts": true}
-			compatibleParts := map[string]bool{"Standard Parts": true}
+			// Get required parts
+			requiredParts := make(map[string]bool)
 
+			// Look for exact model match first
+			if template, ok := compatibilityTemplates[modelName]; ok {
+				for _, part := range template["required_parts"] {
+					requiredParts[part] = true
+				}
+			} else {
+				// Look for partial matches (e.g., "AR-15" template for "Colt AR-15")
+				var matched bool
+				for templateName, template := range compatibilityTemplates {
+					if strings.Contains(modelName, templateName) {
+						for _, part := range template["required_parts"] {
+							requiredParts[part] = true
+						}
+						matched = true
+						break
+					}
+				}
+
+				// If no template matched, use defaults based on category
+				if !matched {
+					switch mainCategory {
+					case "Rifles":
+						requiredParts = map[string]bool{
+							"Barrel":   true,
+							"Receiver": true,
+							"Bolt":     true,
+							"Stock":    true,
+							"Trigger":  true,
+							"Magazine": true,
+						}
+					case "Pistols":
+						if subCategory == "Revolver" {
+							requiredParts = map[string]bool{
+								"Frame":            true,
+								"Barrel":           true,
+								"Cylinder":         true,
+								"Trigger Assembly": true,
+								"Grips":            true,
+							}
+						} else {
+							requiredParts = map[string]bool{
+								"Slide":            true,
+								"Frame":            true,
+								"Barrel":           true,
+								"Recoil Spring":    true,
+								"Trigger Assembly": true,
+								"Magazine":         true,
+							}
+						}
+					case "Shotguns":
+						if subCategory == "Semi-Auto" {
+							requiredParts = map[string]bool{
+								"Receiver":      true,
+								"Barrel":        true,
+								"Gas System":    true,
+								"Bolt Assembly": true,
+								"Stock":         true,
+								"Trigger Group": true,
+							}
+						} else {
+							requiredParts = map[string]bool{
+								"Receiver":       true,
+								"Barrel":         true,
+								"Pump Mechanism": true,
+								"Magazine Tube":  true,
+								"Stock":          true,
+								"Trigger Group":  true,
+							}
+						}
+					}
+				}
+			}
 			requiredPartsJSON, _ := json.Marshal(requiredParts)
+
+			// Generate compatible parts
+			compatibleParts := map[string]bool{
+				"Sights":         true,
+				"Accessories":    true,
+				"Grips":          mainCategory != "Shotguns",
+				"Stocks":         true,
+				"Optics":         mainCategory == "Rifles" || mainCategory == "Shotguns",
+				"Magazines":      mainCategory != "Shotguns" && subCategory != "Revolver",
+				"Muzzle Devices": mainCategory == "Rifles" || (mainCategory == "Pistols" && subCategory != "Revolver"),
+			}
 			compatiblePartsJSON, _ := json.Marshal(compatibleParts)
 
-			// Create image URLs
+			// Generate images
 			images := []string{
 				fmt.Sprintf("https://example.com/images/firearms/%s.jpg", strings.ReplaceAll(modelName, " ", "-")),
 			}
 			imagesJSON, _ := json.Marshal(images)
 
-			// Generate price range based on category
+			// Generate price range
 			var minPrice, maxPrice int
 			switch mainCategory {
 			case "Rifles":
@@ -236,14 +420,15 @@ func SeedDatabase() {
 			}
 			priceRange := fmt.Sprintf("$%d - $%d", minPrice, maxPrice)
 
+			// Create the model
 			model := models.FirearmModel{
 				Name:            modelName,
 				Description:     fmt.Sprintf("A high-quality %s %s firearm.", subCategory, mainCategory),
 				Category:        mainCategory,
 				Subcategory:     subCategory,
+				Specifications:  datatypes.JSON(specsJSON),
 				RequiredParts:   datatypes.JSON(requiredPartsJSON),
 				CompatibleParts: datatypes.JSON(compatiblePartsJSON),
-				Specifications:  datatypes.JSON(specsJSON),
 				Images:          datatypes.JSON(imagesJSON),
 				PriceRange:      priceRange,
 			}
