@@ -1,17 +1,69 @@
-import { useState } from 'react';
+"use client";
 
-export default function BuildSummary() {
+import { useState, useEffect } from 'react';
+
+interface BuildSummaryProps {
+  firearmId?: string;
+  selectedComponents?: number;
+  requiredComponents?: number;
+  totalPrice?: number;
+  compatibilityStatus?: 'compatible' | 'warning' | 'incompatible';
+  onSaveBuild?: () => void;
+}
+
+export default function BuildSummary({
+  firearmId,
+  selectedComponents = 0,
+  requiredComponents = 0,
+  totalPrice = 0,
+  compatibilityStatus = 'compatible',
+  onSaveBuild
+}: BuildSummaryProps) {
   const [isLegalComplianceEnabled, setIsLegalComplianceEnabled] = useState(false);
   const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [firearmName, setFirearmName] = useState<string>('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   // This would be replaced with actual data from context or state management
   const buildSummary = {
-    totalPrice: 1249.95,
-    selectedComponents: 8,
-    requiredComponents: 10,
-    compatibilityStatus: 'compatible', // 'compatible', 'warning', 'incompatible'
+    totalPrice: totalPrice || 0,
+    selectedComponents: selectedComponents || 0,
+    requiredComponents: requiredComponents || 0,
+    compatibilityStatus: compatibilityStatus || 'compatible', // 'compatible', 'warning', 'incompatible'
     legalStatus: isLegalComplianceEnabled ? (selectedState ? 'compliant' : 'unknown') : 'disabled', // 'compliant', 'non-compliant', 'unknown', 'disabled'
   };
+
+  // Reset save success message after 3 seconds
+  useEffect(() => {
+    if (saveSuccess) {
+      const timer = setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [saveSuccess]);
+
+  useEffect(() => {
+    // In a real implementation, this would fetch the firearm name from an API
+    if (firearmId) {
+      // Simulate fetching firearm name
+      const fetchFirearmName = () => {
+        // This would be an API call in a real implementation
+        const firearmNames: Record<string, string> = {
+          'ar15-standard': 'AR-15 Standard',
+          'ak47-standard': 'AK-47 Standard',
+          'glock-19': 'Glock 19',
+          'remington-700': 'Remington 700',
+          // Add more mappings as needed
+        };
+        
+        return firearmNames[firearmId] || 'Custom Firearm';
+      };
+      
+      setFirearmName(fetchFirearmName());
+    }
+  }, [firearmId]);
 
   const states = [
     { id: 'ca', name: 'California' },
@@ -19,6 +71,11 @@ export default function BuildSummary() {
     { id: 'fl', name: 'Florida' },
     { id: 'ny', name: 'New York' },
     { id: 'pa', name: 'Pennsylvania' },
+    { id: 'il', name: 'Illinois' },
+    { id: 'oh', name: 'Ohio' },
+    { id: 'ga', name: 'Georgia' },
+    { id: 'nc', name: 'North Carolina' },
+    { id: 'mi', name: 'Michigan' },
   ];
 
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -29,9 +86,28 @@ export default function BuildSummary() {
     setIsLegalComplianceEnabled(!isLegalComplianceEnabled);
   };
 
+  // Handle save build
+  const handleSaveBuild = () => {
+    // Call the parent's onSaveBuild function if provided
+    if (onSaveBuild) {
+      onSaveBuild();
+    }
+    
+    // Show success message
+    setSaveSuccess(true);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Build Summary</h2>
+      
+      {/* Firearm Model */}
+      {firearmName && (
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Selected Model</h3>
+          <p className="text-gray-700 dark:text-gray-300">{firearmName}</p>
+        </div>
+      )}
       
       {/* Price Summary */}
       <div className="mb-6">
@@ -190,9 +266,19 @@ export default function BuildSummary() {
         )}
       </div>
       
+      {/* Save Success Message */}
+      {saveSuccess && (
+        <div className="mb-4 p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+          <p className="text-sm text-green-800 dark:text-green-200">
+            Build saved successfully! Your progress will be restored when you return.
+          </p>
+        </div>
+      )}
+      
       {/* Action Buttons */}
       <div className="flex flex-col space-y-2">
         <button
+          onClick={handleSaveBuild}
           className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
         >
           Save Build

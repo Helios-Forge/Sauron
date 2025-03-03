@@ -1,4 +1,11 @@
-import { useState } from 'react';
+"use client";
+
+import { useState, useEffect } from 'react';
+
+interface ProductFiltersProps {
+  initialComponent?: string;
+  isAssembly?: boolean;
+}
 
 // These would come from API in a real implementation
 const categories = [
@@ -6,6 +13,20 @@ const categories = [
   { id: 'accessories', name: 'Accessories' },
   { id: 'prebuilt', name: 'Pre-Built Firearms' },
 ];
+
+// Map component IDs to their categories and subcategories
+const componentCategoryMap: Record<string, { category: string, subcategory: string }> = {
+  'upper-receiver': { category: 'parts', subcategory: 'upper-receivers' },
+  'lower-receiver': { category: 'parts', subcategory: 'lower-receivers' },
+  'barrel': { category: 'parts', subcategory: 'barrels' },
+  'handguard': { category: 'parts', subcategory: 'handguards' },
+  'bolt-carrier-group': { category: 'parts', subcategory: 'bolt-carrier-groups' },
+  'trigger-assembly': { category: 'parts', subcategory: 'triggers' },
+  'optics': { category: 'accessories', subcategory: 'optics' },
+  'grip': { category: 'accessories', subcategory: 'grips' },
+  'stock': { category: 'accessories', subcategory: 'stocks' },
+  // Add more mappings as needed
+};
 
 const subcategories = {
   parts: [
@@ -45,12 +66,21 @@ const compatibilities = [
   { id: 'm1911', name: '1911' },
 ];
 
-export default function ProductFilters() {
+export default function ProductFilters({ initialComponent, isAssembly }: ProductFiltersProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
   const [selectedCompatibilities, setSelectedCompatibilities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+
+  // Initialize filters based on initialComponent
+  useEffect(() => {
+    if (initialComponent && componentCategoryMap[initialComponent]) {
+      const { category, subcategory } = componentCategoryMap[initialComponent];
+      setSelectedCategory(category);
+      setSelectedSubcategories([subcategory]);
+    }
+  }, [initialComponent]);
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
@@ -98,6 +128,7 @@ export default function ProductFilters() {
       manufacturers: selectedManufacturers,
       compatibilities: selectedCompatibilities,
       priceRange,
+      isAssembly,
     });
   };
 
@@ -112,6 +143,14 @@ export default function ProductFilters() {
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Filters</h2>
+      
+      {isAssembly && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            Showing assembly products only
+          </p>
+        </div>
+      )}
       
       {/* Category Filter */}
       <div className="mb-6">

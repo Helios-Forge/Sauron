@@ -1,5 +1,8 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const metadata = {
   title: "Reset Password - GunGuru",
@@ -22,47 +25,36 @@ export default function ResetPasswordPage() {
             </div>
             
             <form className="space-y-6">
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  New password
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="password">New password</Label>
+                <Input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="••••••••"
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Must be at least 8 characters with 1 uppercase, 1 number, and 1 special character.
                 </p>
               </div>
               
-              <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Confirm new password
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm new password</Label>
+                <Input
                   id="confirm-password"
                   name="confirm-password"
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="••••••••"
                 />
               </div>
               
-              <div>
-                <button
-                  type="submit"
-                  className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-                >
-                  Reset password
-                </button>
-              </div>
+              <Button type="submit" className="w-full">
+                Reset password
+              </Button>
             </form>
             
             <div className="mt-8 text-center">

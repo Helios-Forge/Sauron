@@ -1,4 +1,6 @@
-import { useState } from 'react';
+"use client";
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -17,21 +19,91 @@ interface Product {
   reviewCount: number;
   image: string;
   price: number;
+  isAssembly?: boolean;
+  componentType?: string;
   sellers: Seller[];
 }
 
+interface ProductCatalogProps {
+  componentFilter?: string;
+  isAssembly?: boolean;
+  onSelectProduct?: (productId: string) => void;
+  selectedProductId?: string | null;
+  returnToBuilder?: boolean;
+}
+
 // This would be replaced with actual API call
-async function getProducts(): Promise<Product[]> {
+function getProducts(componentFilter?: string, isAssembly?: boolean): Product[] {
   // In a real implementation, this would be:
-  // const response = await fetch('/api/listings');
+  // const response = await fetch(`/api/listings?component=${componentFilter}&isAssembly=${isAssembly}`);
   // return response.json();
   
-  // For now, return empty array as we'll implement the API integration later
+  // For now, return mock data if we have a component filter
+  if (componentFilter) {
+    // Generate some mock products for the component
+    return Array.from({ length: 5 }, (_, i) => ({
+      id: `${componentFilter}-${i + 1}`,
+      name: `${componentFilter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} ${isAssembly ? 'Assembly' : 'Part'} ${i + 1}`,
+      manufacturer: ['Aero Precision', 'Bravo Company', 'Daniel Defense', 'Geissele', 'Magpul'][i % 5],
+      rating: 4 + (i % 2) * 0.5,
+      reviewCount: 50 + i * 20,
+      image: '/placeholder.jpg',
+      price: isAssembly ? 150 + i * 25 : 50 + i * 15,
+      isAssembly: isAssembly,
+      componentType: componentFilter,
+      sellers: [
+        {
+          name: 'GunBroker',
+          price: isAssembly ? 150 + i * 25 : 50 + i * 15,
+          shipping: 10.00,
+          logo: '/placeholder-logo.jpg'
+        },
+        {
+          name: 'Brownells',
+          price: isAssembly ? 160 + i * 25 : 55 + i * 15,
+          shipping: 0,
+          logo: '/placeholder-logo.jpg'
+        },
+        {
+          name: 'Palmetto State Armory',
+          price: isAssembly ? 155 + i * 25 : 52 + i * 15,
+          shipping: 7.50,
+          logo: '/placeholder-logo.jpg'
+        }
+      ]
+    }));
+  }
+  
+  // Return empty array for now
   return [];
 }
 
-export default async function ProductCatalog() {
-  const products = await getProducts();
+export default function ProductCatalog({ 
+  componentFilter, 
+  isAssembly = false,
+  onSelectProduct,
+  selectedProductId,
+  returnToBuilder = false
+}: ProductCatalogProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch products when component mounts or filters change
+    const fetchedProducts = getProducts(componentFilter, isAssembly);
+    setProducts(fetchedProducts);
+    setLoading(false);
+  }, [componentFilter, isAssembly]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 dark:text-gray-400">
+          Loading products...
+        </p>
+      </div>
+    );
+  }
 
   if (products.length === 0) {
     return (
@@ -57,7 +129,13 @@ export default async function ProductCatalog() {
         </thead>
         <tbody>
           {products.map((product) => (
-            <ProductRow key={product.id} product={product} />
+            <ProductRow 
+              key={product.id} 
+              product={product} 
+              onSelectProduct={onSelectProduct}
+              isSelected={selectedProductId === product.id}
+              returnToBuilder={returnToBuilder}
+            />
           ))}
         </tbody>
       </table>
@@ -65,13 +143,29 @@ export default async function ProductCatalog() {
   );
 }
 
-function ProductRow({ product }: { product: Product }) {
+function ProductRow({ 
+  product, 
+  onSelectProduct,
+  isSelected,
+  returnToBuilder
+}: { 
+  product: Product;
+  onSelectProduct?: (productId: string) => void;
+  isSelected?: boolean;
+  returnToBuilder?: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const cheapestSeller = product.sellers.sort((a, b) => a.price - b.price)[0];
 
+  const handleSelectProduct = () => {
+    if (onSelectProduct) {
+      onSelectProduct(product.id);
+    }
+  };
+
   return (
     <>
-      <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+      <tr className={`${isSelected ? 'bg-blue-50 dark:bg-blue-900' : 'bg-white dark:bg-gray-800'} border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600`}>
         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 relative bg-gray-200 rounded">
@@ -88,6 +182,11 @@ function ProductRow({ product }: { product: Product }) {
               <Link href={`/catalog/${product.id}`} className="hover:underline">
                 {product.name}
               </Link>
+              {product.isAssembly && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 rounded-full">
+                  Assembly
+                </span>
+              )}
               <button 
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="ml-2 text-blue-600 dark:text-blue-400 text-xs"
@@ -119,9 +218,22 @@ function ProductRow({ product }: { product: Product }) {
         </td>
         <td className="px-6 py-4">${product.price.toFixed(2)}</td>
         <td className="px-6 py-4">
-          <button className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-            Add to Builder
-          </button>
+          {returnToBuilder ? (
+            <button 
+              onClick={handleSelectProduct}
+              className={`font-medium rounded-lg text-sm px-4 py-2 ${
+                isSelected 
+                  ? 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800'
+              }`}
+            >
+              {isSelected ? 'Selected' : 'Select Part'}
+            </button>
+          ) : (
+            <button className="font-medium text-blue-600 dark:text-blue-500 hover:underline">
+              Add to Builder
+            </button>
+          )}
         </td>
       </tr>
       {isExpanded && (
