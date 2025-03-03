@@ -25,15 +25,8 @@ func SetupRouter() *gin.Engine {
 	router.GET("/parts/category/:category", handlers.GetPartsByCategory)
 	router.GET("/parts/:id/compatible", handlers.GetCompatibleParts)
 
-	// Compatibility Rules
-	router.GET("/compatibility-rules", handlers.GetCompatibilityRules)
-	router.POST("/compatibility-rules", handlers.CreateCompatibilityRule)
-	router.GET("/compatibility-rules/:id", handlers.GetCompatibilityRuleByID)
-	router.PUT("/compatibility-rules/:id", handlers.UpdateCompatibilityRule)
-	router.DELETE("/compatibility-rules/:id", handlers.DeleteCompatibilityRule)
-	router.GET("/compatibility-rules/part/:partId", handlers.GetCompatibilityRulesByPartID)
-	router.GET("/compatibility-rules/firearm/:firearmId/part/:partId", handlers.GetCompatibilityRulesByFirearmAndPart)
-	router.GET("/compatibility-check", handlers.CheckPartsCompatibility)
+	// Compatibility Rules - Removed as per new schema design
+	// These routes are no longer needed as compatibility information is now embedded in the models
 
 	// Prebuilt Firearms
 	router.GET("/prebuilt-firearms", handlers.GetPrebuiltFirearms)
@@ -58,7 +51,7 @@ func SetupRouter() *gin.Engine {
 	router.GET("/sellers/:id", handlers.GetSellerByID)
 	router.PUT("/sellers/:id", handlers.UpdateSeller)
 	router.DELETE("/sellers/:id", handlers.DeleteSeller)
-	router.PATCH("/sellers/:id/status", handlers.UpdateSellerStatus)
+	router.PATCH("/sellers/:id/affiliate-status", handlers.UpdateSellerStatus)
 
 	// Product Listings
 	router.GET("/listings", handlers.GetProductListings)

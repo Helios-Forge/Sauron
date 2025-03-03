@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"sauron-backend/internal/models"
@@ -14,28 +15,36 @@ import (
 // Mock sellers data
 var sellers = []models.Seller{
 	{
-		Name:        "Brownells",
-		Website:     "https://www.brownells.com",
-		ApiEndpoint: "https://api.brownells.com/v1",
-		Status:      "active",
+		Name:                  "Brownells",
+		WebsiteURL:            "https://www.brownells.com",
+		Description:           "A trusted retailer of firearm parts and accessories.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.brownells.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/brownells_logo.png",
 	},
 	{
-		Name:        "Midway USA",
-		Website:     "https://www.midwayusa.com",
-		ApiEndpoint: "https://api.midwayusa.com/v1",
-		Status:      "active",
+		Name:                  "Midway USA",
+		WebsiteURL:            "https://www.midwayusa.com",
+		Description:           "Quality shooting and hunting supplies with industry-best customer service.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.midwayusa.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/midway_logo.png",
 	},
 	{
-		Name:        "Primary Arms",
-		Website:     "https://www.primaryarms.com",
-		ApiEndpoint: "https://api.primaryarms.com/v1",
-		Status:      "active",
+		Name:                  "Primary Arms",
+		WebsiteURL:            "https://www.primaryarms.com",
+		Description:           "Provider of high-quality firearms, optics, and accessories.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.primaryarms.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/primaryarms_logo.png",
 	},
 	{
-		Name:        "Palmetto State Armory",
-		Website:     "https://palmettostatearmory.com",
-		ApiEndpoint: "https://api.palmettostatearmory.com/v1",
-		Status:      "active",
+		Name:                  "Palmetto State Armory",
+		WebsiteURL:            "https://palmettostatearmory.com",
+		Description:           "American firearms, ammunition, and accessories at great prices.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://palmettostatearmory.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/psa_logo.png",
 	},
 }
 
@@ -104,9 +113,11 @@ func SeedDatabase() {
 	// Add additional sellers
 	for _, sellerName := range additionalSellers {
 		seller := models.Seller{
-			Name:    sellerName,
-			Website: "https://www." + strings.ToLower(strings.ReplaceAll(sellerName, " ", "")) + ".com",
-			Status:  "active",
+			Name:        sellerName,
+			WebsiteURL:  "https://www." + strings.ToLower(strings.ReplaceAll(sellerName, " ", "")) + ".com",
+			Description: "Retailer of firearm parts and accessories.",
+			IsAffiliate: false,
+			LogoURL:     "https://example.com/" + strings.ToLower(strings.ReplaceAll(sellerName, " ", "_")) + "_logo.png",
 		}
 		if err := DB.Create(&seller).Error; err != nil {
 			log.Printf("Error seeding seller %s: %v", sellerName, err)
@@ -118,23 +129,52 @@ func SeedDatabase() {
 	for category, modelNames := range allFirearmModels {
 		for _, modelName := range modelNames {
 			// Get compatibility template if it exists, otherwise use default
-			var requiredParts, compatibleParts []string
+			var requiredParts, compatibleParts map[string]bool
 			if template, exists := compatibilityTemplates[modelName]; exists {
-				requiredParts = template["required_parts"]
-				compatibleParts = template["compatible_calibers"]
+				// Convert array to object with boolean values
+				requiredParts = make(map[string]bool)
+				for _, part := range template["required_parts"] {
+					requiredParts[part] = true
+				}
+
+				// Convert array to object with boolean values
+				compatibleParts = make(map[string]bool)
+				for _, part := range template["compatible_calibers"] {
+					compatibleParts[part] = true
+				}
 			} else {
-				requiredParts = []string{"Basic Parts"}        // Default required parts
-				compatibleParts = []string{"Standard Caliber"} // Default compatibility
+				requiredParts = map[string]bool{"Basic Parts": true}      // Default required parts
+				compatibleParts = map[string]bool{"Standard Parts": true} // Default compatibility
 			}
 
 			requiredPartsJSON, _ := json.Marshal(requiredParts)
 			compatiblePartsJSON, _ := json.Marshal(compatibleParts)
 
+			// Create specifications
+			specifications := map[string]interface{}{
+				"caliber": "Multiple",
+				"weight":  "Varies by configuration",
+			}
+			specificationsJSON, _ := json.Marshal(specifications)
+
+			// Create image URLs
+			images := []string{
+				"https://example.com/" + strings.ToLower(strings.ReplaceAll(modelName, " ", "_")) + "_1.jpg",
+				"https://example.com/" + strings.ToLower(strings.ReplaceAll(modelName, " ", "_")) + "_2.jpg",
+			}
+			imagesJSON, _ := json.Marshal(images)
+
 			model := models.FirearmModel{
 				Name:            modelName,
+				Description:     "A popular " + category + " firearm platform.",
 				Category:        category,
+				Subcategory:     "Standard",
+				Variant:         "Standard",
 				RequiredParts:   datatypes.JSON(requiredPartsJSON),
 				CompatibleParts: datatypes.JSON(compatiblePartsJSON),
+				Specifications:  datatypes.JSON(specificationsJSON),
+				Images:          datatypes.JSON(imagesJSON),
+				PriceRange:      "$" + fmt.Sprintf("%.0f", 500+rand.Float64()*1000) + " - $" + fmt.Sprintf("%.0f", 1500+rand.Float64()*1000),
 			}
 
 			if err := DB.Create(&model).Error; err != nil {
@@ -148,18 +188,28 @@ func SeedDatabase() {
 	for mainCategory, subCategories := range allParts {
 		for subCategory, parts := range subCategories {
 			for _, partName := range parts {
-				compatibility := map[string]interface{}{
-					"firearm_models": getCompatibleFirearms(mainCategory, subCategory, partName),
-					"subcategory":    subCategory,
+				// Create compatible models list
+				compatibleModels := getCompatibleFirearms(mainCategory, subCategory, partName)
+				compatibleModelsJSON, _ := json.Marshal(compatibleModels)
+
+				// Create specifications
+				specifications := map[string]interface{}{
+					"subcategory": subCategory,
 				}
-				compatibilityJSON, _ := json.Marshal(compatibility)
+				specificationsJSON, _ := json.Marshal(specifications)
 
 				part := models.Part{
-					Name:          partName,
-					Category:      mainCategory,
-					Subcategory:   subCategory,
-					IsPrebuilt:    false,
-					Compatibility: datatypes.JSON(compatibilityJSON),
+					Name:             partName,
+					Description:      "A quality " + partName + " for your firearm build.",
+					Category:         mainCategory,
+					Subcategory:      subCategory,
+					IsPrebuilt:       false,
+					CompatibleModels: datatypes.JSON(compatibleModelsJSON),
+					Specifications:   datatypes.JSON(specificationsJSON),
+					Availability:     "in_stock",
+					Price:            generatePrice(),
+					Weight:           0.5 + rand.Float64(),
+					Dimensions:       "5 x 3 x 2 in",
 				}
 
 				if err := DB.Create(&part).Error; err != nil {
@@ -193,7 +243,7 @@ func SeedDatabase() {
 			listing := models.ProductListing{
 				SellerID:     seller.ID,
 				PartID:       &part.ID,
-				URL:          generateProductURL(seller.Website, part.Name),
+				URL:          generateProductURL(seller.WebsiteURL, part.Name),
 				SKU:          generateSKU(seller.Name, part.Name),
 				Price:        generatePrice(),
 				Currency:     "USD",

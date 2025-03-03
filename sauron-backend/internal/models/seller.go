@@ -7,7 +7,7 @@ import (
 )
 
 // Seller represents a vendor or retailer in the system
-// @Description Information about sellers and their API integrations
+// @Description Information about sellers who offer parts and prebuilt firearms
 type Seller struct {
 	// Unique identifier for the seller
 	ID int `json:"id" gorm:"primaryKey" example:"1"`
@@ -15,21 +15,23 @@ type Seller struct {
 	// Name of the seller
 	Name string `json:"name" gorm:"size:255;not null" example:"Brownells"`
 
+	// Description of the seller
+	Description string `json:"description" gorm:"type:text" example:"A trusted retailer of firearm parts and accessories."`
+
 	// Website URL of the seller
-	Website string `json:"website" gorm:"size:255;not null" example:"https://www.brownells.com"`
+	WebsiteURL string `json:"website_url" gorm:"size:255" example:"https://www.brownells.com"`
 
-	// API endpoint for the seller's integration
-	ApiEndpoint string `json:"api_endpoint" gorm:"size:255" example:"https://api.brownells.com/v1"`
+	// URL to the seller's logo
+	LogoURL string `json:"logo_url" gorm:"size:255" example:"https://example.com/brownells_logo.png"`
 
-	// Encrypted API key for authentication
-	ApiKey string `json:"api_key" gorm:"size:255" example:"encrypted_api_key_here"`
+	// Whether the seller is an affiliate partner
+	IsAffiliate bool `json:"is_affiliate" gorm:"default:false" example:"false"`
 
-	// Current status of the seller (active, inactive, suspended)
-	Status string `json:"status" gorm:"size:50;default:'active'" example:"active"`
+	// Template for creating affiliate links (NULL if not affiliate)
+	AffiliateLinkTemplate string `json:"affiliate_link_template" gorm:"size:255" example:"https://www.brownells.com/?aff=gunguru_{product_id}"`
 
-	// Additional seller-specific settings
-	// @Description JSON object containing seller configuration
-	Settings datatypes.JSON `json:"settings" gorm:"type:jsonb" swaggertype:"string" example:"{\"api_version\":\"v1\",\"update_frequency\":\"daily\",\"preferred_currency\":\"USD\"}"`
+	// Contact information for the seller
+	ContactInfo datatypes.JSON `json:"contact_info" gorm:"type:jsonb" swaggertype:"string" example:"{\"phone\": \"800-741-0015\", \"email\": \"support@brownells.com\"}"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`

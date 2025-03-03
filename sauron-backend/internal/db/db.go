@@ -29,18 +29,46 @@ func InitDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+	// Check if tables exist and get their state
+	hasExistingData := hasExistingData()
+
 	// Auto Migrate the schemas
+	log.Println("Starting database migration...")
+
+	// First, migrate the base models
+	err = DB.AutoMigrate(
+		&models.Manufacturer{},
+		&models.Seller{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate manufacturer and seller tables:", err)
+	}
+
+	// Then migrate the models that depend on manufacturers
 	err = DB.AutoMigrate(
 		&models.FirearmModel{},
 		&models.Part{},
-		&models.CompatibilityRule{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate firearm model and part tables:", err)
+	}
+
+	// Finally migrate the rest of the models
+	err = DB.AutoMigrate(
+		&models.PartSellerLink{},
 		&models.PrebuiltFirearm{},
+		&models.PrebuiltSellerLink{},
 		&models.UserSuggestion{},
-		&models.Seller{},
 		&models.ProductListing{},
 	)
 	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
+		log.Fatal("Failed to migrate remaining tables:", err)
+	}
+
+	// If there was existing data, we need to update it to match the new schema
+	if hasExistingData {
+		log.Println("Updating existing data to match new schema...")
+		updateExistingData()
 	}
 
 	// Initialize random seed
@@ -57,4 +85,31 @@ func InitDB() {
 	}
 
 	log.Println("Database connection established and ready")
+}
+
+// Check if there's existing data in the database
+func hasExistingData() bool {
+	var sellerCount int64
+	DB.Model(&models.Seller{}).Count(&sellerCount)
+	return sellerCount > 0
+}
+
+// Update existing data to match the new schema
+func updateExistingData() {
+	// Update existing parts that might have null compatible_models
+	var parts []models.Part
+	DB.Where("compatible_models IS NULL").Find(&parts)
+
+	for _, part := range parts {
+		// Create a default compatible_models value based on the category
+		compatibleModels := []string{"Universal"}
+		if part.Category == "Upper Assembly" || part.Category == "Lower Assembly" {
+			compatibleModels = []string{"AR-15", "M4", "M16"}
+		}
+
+		// Serialize to JSON and update
+		DB.Model(&part).Update("compatible_models", compatibleModels)
+	}
+
+	log.Printf("Updated %d parts with default compatible_models values", len(parts))
 }

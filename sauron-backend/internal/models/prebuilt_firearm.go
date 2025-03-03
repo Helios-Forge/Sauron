@@ -12,22 +12,31 @@ type PrebuiltFirearm struct {
 	// Unique identifier for the prebuilt firearm
 	ID int `json:"id" gorm:"primaryKey" example:"1"`
 
-	// ID of the base firearm model
-	FirearmModelID int `json:"firearm_model_id" gorm:"not null" example:"1"`
+	// Reference to the base firearm model
+	FirearmModelID int          `json:"firearm_model_id" gorm:"index" example:"1"`
+	FirearmModel   FirearmModel `json:"-" gorm:"foreignKey:FirearmModelID"`
 
 	// Name of the prebuilt configuration
-	Name string `json:"name" gorm:"size:255;not null" example:"Custom AR-15 Build"`
+	Name string `json:"name" gorm:"size:255;not null" example:"Colt M4 Carbine"`
 
-	// List of components included in this build
-	// @Description JSON object containing component details and specifications
-	Components datatypes.JSON `json:"components" gorm:"type:jsonb;not null" swaggertype:"string" example:"{\"upper_receiver\":\"BCM Complete Upper\",\"lower_receiver\":\"Aero M4E1\",\"barrel\":\"16 inch 5.56 NATO\"}"`
+	// Description of the prebuilt firearm
+	Description string `json:"description" gorm:"type:text" example:"A prebuilt M4 variant with a 14.5-inch barrel."`
+
+	// Components included in this prebuilt (with IDs)
+	Components datatypes.JSON `json:"components" gorm:"type:jsonb;not null" swaggertype:"string" example:"{\"Upper Assembly\": {\"id\": 1}, \"Lower Assembly\": {\"id\": 4}}"`
+
+	// Base price of the prebuilt firearm
+	Price float64 `json:"price" gorm:"type:decimal(10,2)" example:"999.99"`
+
+	// Image URLs for the prebuilt firearm
+	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/m4_1.jpg\"]"`
+
+	// Availability status
+	Availability string `json:"availability" gorm:"size:50" example:"in_stock"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`
 
 	// Last update timestamp
 	UpdatedAt time.Time `json:"updated_at" gorm:"default:current_timestamp"`
-
-	// Base firearm model
-	FirearmModel FirearmModel `json:"firearm_model" gorm:"foreignKey:FirearmModelID"`
 }

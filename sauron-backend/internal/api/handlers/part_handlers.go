@@ -74,10 +74,25 @@ func GetPartsByCategory(c *gin.Context) {
 // Get compatible parts
 func GetCompatibleParts(c *gin.Context) {
 	partID := c.Param("id")
+
+	// First get the part to find its compatible models
+	var part models.Part
+	if err := db.DB.First(&part, partID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Part not found"})
+		return
+	}
+
+	// Check if CompatibleModels is empty
+	if part.CompatibleModels == nil || len(part.CompatibleModels) == 0 {
+		c.JSON(http.StatusOK, []models.Part{})
+		return
+	}
+
+	// Find all parts that are compatible with the same models
 	var compatibleParts []models.Part
-	db.DB.Table("parts").
-		Joins("JOIN compatibility_rules ON parts.id = compatibility_rules.compatible_with_part_id").
-		Where("compatibility_rules.part_id = ?", partID).
+	db.DB.Where("id != ?", partID).
+		Where("JSON_OVERLAPS(compatible_models, ?)", part.CompatibleModels).
 		Find(&compatibleParts)
+
 	c.JSON(http.StatusOK, compatibleParts)
 }

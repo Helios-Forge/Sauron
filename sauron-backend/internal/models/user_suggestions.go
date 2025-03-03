@@ -7,17 +7,19 @@ import (
 )
 
 // UserSuggestion represents a user-submitted suggestion for new firearm models or parts
-// @Description User suggestions for new content or improvements
+// @Description User suggestions for new models, parts, or configurations
 type UserSuggestion struct {
 	// Unique identifier for the suggestion
 	ID int `json:"id" gorm:"primaryKey" example:"1"`
 
-	// Name of the suggested model or part
-	ModelName string `json:"model_name" gorm:"size:255" example:"New AR-15 Variant"`
+	// Name of the suggested model or configuration
+	ModelName string `json:"model_name" gorm:"size:255" example:"Custom AR-10 Build"`
 
 	// List of suggested parts or modifications
-	// @Description JSON object containing detailed suggestions
-	SuggestedParts datatypes.JSON `json:"suggested_parts" gorm:"type:jsonb" swaggertype:"string" example:"{\"parts\":[\"Custom Handguard\",\"Modified BCG\"],\"modifications\":[\"Enhanced Feed Ramps\"]}"`
+	SuggestedParts datatypes.JSON `json:"suggested_parts" gorm:"type:jsonb" swaggertype:"string" example:"{\"Barrel\": {\"name\": \"20in 308 Barrel\"}, \"Stock\": {\"name\": \"Magpul PRS\"}}"`
+
+	// Description of the suggestion
+	Description string `json:"description" gorm:"type:text" example:"A suggestion for a long-range AR-10 configuration."`
 
 	// Current status of the suggestion (pending, approved, rejected)
 	Status string `json:"status" gorm:"size:50;default:'pending'" example:"pending"`

@@ -15,22 +15,36 @@ type FirearmModel struct {
 	// Name of the firearm model
 	Name string `json:"name" gorm:"size:255;not null" example:"AR-15"`
 
+	// Description of the firearm model
+	Description string `json:"description" gorm:"type:text" example:"A lightweight semi-automatic rifle based on the ArmaLite design."`
+
+	// Reference to the manufacturer
+	ManufacturerID int          `json:"manufacturer_id" gorm:"index" example:"1"`
+	Manufacturer   Manufacturer `json:"-" gorm:"foreignKey:ManufacturerID"`
+
 	// Category of the firearm
-	Category string `json:"category" gorm:"size:100" example:"Assault Rifles"`
+	Category string `json:"category" gorm:"size:100" example:"Rifle"`
 
 	// Subcategory of the firearm
 	Subcategory string `json:"subcategory" gorm:"size:100" example:"Semi-Automatic"`
 
 	// Variant of the firearm model
-	Variant string `json:"variant" gorm:"size:50" example:"M4"`
+	Variant string `json:"variant" gorm:"size:50" example:"Carbine"`
 
-	// List of required parts for this firearm model
-	// @Description JSON array of required part names
-	RequiredParts datatypes.JSON `json:"required_parts" gorm:"type:jsonb;not null" swaggertype:"array,string" example:"['Upper Receiver', 'Lower Receiver', 'Bolt Carrier Group']"`
+	// Specifications of the firearm
+	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"caliber\": \"5.56mm\", \"barrel_length\": \"16in\", \"weight\": \"6.5lb\"}"`
 
-	// List of compatible parts for this firearm model
-	// @Description JSON array of compatible part categories
-	CompatibleParts datatypes.JSON `json:"compatible_parts" gorm:"type:jsonb" swaggertype:"array,string" example:"['5.56 NATO', '.223 Remington']"`
+	// JSON object of required parts
+	RequiredParts datatypes.JSON `json:"required_parts" gorm:"type:jsonb;not null" swaggertype:"string" example:"{\"Upper Assembly\": true, \"Lower Assembly\": true}"`
+
+	// JSON object of compatible parts
+	CompatibleParts datatypes.JSON `json:"compatible_parts" gorm:"type:jsonb" swaggertype:"string" example:"{\"Sights and Optics\": true, \"Grips\": true}"`
+
+	// Image URLs for the firearm model
+	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]"`
+
+	// Price range for the firearm model
+	PriceRange string `json:"price_range" gorm:"size:50" example:"$800 - $1200"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`
