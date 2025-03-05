@@ -416,25 +416,60 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
             // Select the assembly
             items[i].selectedPart = assembly;
             
+            // Mark component as pre-built
+            items[i].isPrebuilt = true;
+            
             // If this is an assembly with sub-components, auto-select them too
             if (items[i].subComponents && items[i].subComponents.length > 0) {
               console.log(`Processing ${items[i].subComponents.length} subcomponents`);
               
+              // Get the array of subcomponent names from the assembly
+              const assemblySubComponents = Array.isArray(assembly.sub_components) 
+                ? assembly.sub_components.map(sc => sc.name) 
+                : [];
+              
+              console.log("Assembly subcomponent names:", assemblySubComponents);
+              
+              // Process each sub-component
               items[i].subComponents.forEach(subComponent => {
-                // Find the matching sub-component from the assembly's sub_components list
-                const subComponentInAssembly = getSubComponentNames(assembly).includes(subComponent.category) ||
-                  (subComponent.subcategory && getSubComponentNames(assembly).includes(subComponent.subcategory));
+                // Check if this subcomponent is included in the assembly
+                const isIncludedInAssembly = assemblySubComponents.some(subName => 
+                  subName === subComponent.category || 
+                  subName === subComponent.subcategory ||
+                  subName === subComponent.name
+                );
                 
-                console.log(`Subcomponent ${subComponent.category} is included in assembly: ${subComponentInAssembly}`);
+                console.log(`Subcomponent ${subComponent.category} is included in assembly: ${isIncludedInAssembly}`);
                 
-                if (subComponentInAssembly) {
-                  // Create a mock part to represent that it's included in the assembly
+                if (isIncludedInAssembly) {
+                  // Create a virtual part to represent that it's included in the assembly
                   subComponent.selectedPart = {
-                    ...subComponent.partData,
+                    ...assembly, // Use assembly as base to get manufacturer, etc.
+                    id: -100000 - subComponent.id, // Use negative ID to indicate virtual
                     name: `Included in ${assembly.name}`,
                     price: 0, // Price is already included in the assembly
-                    description: `Part of the ${assembly.name} assembly`
-                  };
+                    description: `Part of the ${assembly.name} assembly`,
+                    category: subComponent.category,
+                    subcategory: subComponent.subcategory,
+                    is_prebuilt: false,
+                    fulfilled_by_assembly: true, // Add a flag to mark it as fulfilled by an assembly
+                    parent_assembly_id: assembly.id, // Reference back to the parent assembly
+                    sub_components: [],
+                    compatible_models: assembly.compatible_models,
+                    requires: [],
+                    specifications: {},
+                    images: [],
+                    availability: assembly.availability,
+                    weight: 0,
+                    dimensions: "",
+                    created_at: "",
+                    updated_at: ""
+                  } as any;
+                  
+                  // Recursively fulfill any deeper sub-components if they exist
+                  if (subComponent.subComponents && subComponent.subComponents.length > 0) {
+                    fulfillSubComponentsFromAssembly(subComponent.subComponents, assembly);
+                  }
                 }
               });
             }
@@ -454,20 +489,41 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       // Update build statistics
       updateBuildSummary(updated);
       
-      console.log("Updated component structure after assembly selection:", updated.map(c => ({
-        id: c.id,
-        category: c.category,
-        subcategory: c.subcategory,
-        isRequired: c.isRequired,
-        selectedPart: c.selectedPart ? c.selectedPart.name : null,
-        subComponentsCount: c.subComponents.length,
-        subComponents: c.subComponents.map(sc => ({
-          category: sc.category,
-          selectedPart: sc.selectedPart ? sc.selectedPart.name : null
-        }))
-      })));
-      
       return updated;
+    });
+  };
+
+  // Helper function to mark sub-components as fulfilled by an assembly
+  const fulfillSubComponentsFromAssembly = (subComponents: ComponentItem[], assembly: Part) => {
+    subComponents.forEach(subComponent => {
+      // Create a virtual part to represent that it's included in the assembly
+      subComponent.selectedPart = {
+        ...assembly, // Use assembly as base
+        id: -100000 - subComponent.id, // Use negative ID to indicate virtual
+        name: `Included in ${assembly.name}`,
+        price: 0, // Price is already included in assembly
+        description: `Part of the ${assembly.name} assembly`,
+        category: subComponent.category,
+        subcategory: subComponent.subcategory,
+        is_prebuilt: false,
+        fulfilled_by_assembly: true,
+        parent_assembly_id: assembly.id,
+        sub_components: [],
+        compatible_models: assembly.compatible_models,
+        requires: [],
+        specifications: {},
+        images: [],
+        availability: assembly.availability,
+        weight: 0,
+        dimensions: "",
+        created_at: "",
+        updated_at: ""
+      } as any;
+      
+      // Recursively process deeper levels if they exist
+      if (subComponent.subComponents && subComponent.subComponents.length > 0) {
+        fulfillSubComponentsFromAssembly(subComponent.subComponents, assembly);
+      }
     });
   };
 
@@ -631,6 +687,10 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         isAssembly(part)
       );
       
+      // Check if this component is fulfilled by a parent assembly
+      const isFulfilledByAssembly = component.selectedPart && 
+                                    (component.selectedPart as any).fulfilled_by_assembly === true;
+      
       // Main component row
       rows.push(
         <tr key={componentKey} className={level === 0 ? "bg-gray-50 dark:bg-gray-800" : "bg-white dark:bg-gray-700"}>
@@ -650,11 +710,16 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
               <div className="w-6 ml-1" /> 
             )}
             
-            <span className={level > 0 ? "ml-4" : "font-medium"}>
+            <span className={`${level > 0 ? "ml-4" : "font-medium"} ${isFulfilledByAssembly ? "text-blue-600 dark:text-blue-400" : ""}`}>
               {component.category}
-              {hasAssemblyOption && (
+              {hasAssemblyOption && !isFulfilledByAssembly && (
                 <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs font-normal">
                   (Assembly Available)
+                </span>
+              )}
+              {isFulfilledByAssembly && (
+                <span className="ml-2 text-xs font-normal">
+                  (From Assembly)
                 </span>
               )}
             </span>
@@ -668,14 +733,20 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
           </td>
           <td className="px-4 py-3">
             {component.selectedPart ? (
-              component.selectedPart.name
+              <span className={isFulfilledByAssembly ? "text-blue-600 dark:text-blue-400 italic" : ""}>
+                {component.selectedPart.name}
+              </span>
             ) : (
               <span className="text-gray-500 dark:text-gray-400">Not selected</span>
             )}
           </td>
           <td className="px-4 py-3 text-right">
             {component.selectedPart ? (
-              `$${component.selectedPart.price.toFixed(2)}`
+              isFulfilledByAssembly ? (
+                <span className="text-blue-600 dark:text-blue-400 italic">Included</span>
+              ) : (
+                `$${component.selectedPart.price.toFixed(2)}`
+              )
             ) : (
               '-'
             )}
@@ -689,19 +760,28 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
           </td>
           <td className="px-4 py-3 text-right">
             <div className="flex space-x-2 justify-end">
-              <button
-                onClick={() => handleAddPart(component)}
-                className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
-                Add Part
-              </button>
+              {isFulfilledByAssembly ? (
+                <button
+                  onClick={() => handleAddPart(component)}
+                  className="px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+                >
+                  Replace Part
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleAddPart(component)}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                >
+                  {component.selectedPart ? 'Change Part' : 'Add Part'}
+                </button>
+              )}
               
-              {hasAssemblyOption && (
+              {hasAssemblyOption && !isFulfilledByAssembly && (
                 <button
                   onClick={() => handleAddAssembly(component)}
                   className="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
                 >
-                  Add Assembly
+                  {component.selectedPart && component.isPrebuilt ? 'Change Assembly' : 'Add Assembly'}
                 </button>
               )}
             </div>
@@ -709,7 +789,7 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         </tr>
       );
       
-      // Only render sub-components if this component is expanded and it hasn't been selected as an assembly
+      // Only render sub-components if this component is expanded
       if (hasSubComponents && expandedItems.includes(component.id)) {
         rows.push(...renderComponentRows(component.subComponents || [], level + 1));
       }
