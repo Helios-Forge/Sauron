@@ -698,6 +698,17 @@ func seedParts() {
 						map[string]string{"name": "Carrier", "type": "required"},
 						map[string]string{"name": "Firing Pin", "type": "required"},
 					)
+				} else if partName == "Complete Lower Receiver (AR-15)" {
+					// Add all required sub-components for Complete Lower Receiver
+					subComponents = append(subComponents,
+						map[string]string{"name": "Stripped Lower Receiver (AR-15)", "type": "required"},
+						map[string]string{"name": "Mil-Spec Trigger (AR-15)", "type": "required"},
+						map[string]string{"name": "Standard Safety Selector (AR-15)", "type": "required"},
+						map[string]string{"name": "Standard Magazine Release (AR-15)", "type": "required"},
+						map[string]string{"name": "Standard Bolt Catch (AR-15)", "type": "required"},
+						map[string]string{"name": "Standard A2 Grip (AR-15)", "type": "required"},
+						map[string]string{"name": "M4 Collapsible Stock (AR-15)", "type": "required"},
+					)
 				}
 
 				subComponentsJSON, _ := json.Marshal(subComponents)
@@ -779,6 +790,13 @@ func seedParts() {
 					Price:            generatePrice(),
 					Weight:           0.5 + rand.Float64(),
 					Dimensions:       "5 x 3 x 2 in",
+				}
+
+				// Set Complete Lower Receiver (AR-15) as prebuilt
+				if partName == "Complete Lower Receiver (AR-15)" {
+					part.IsPrebuilt = true
+					part.Price = generatePrice() * 1.5 // Prebuilt parts are more expensive
+					part.Description = "A completely assembled lower receiver for your AR-15 build, ready to be paired with an upper receiver."
 				}
 
 				if result := DB.Create(&part); result.Error != nil {
