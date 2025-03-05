@@ -35,6 +35,13 @@ func SetupRouter() *gin.Engine {
 	router.GET("/parts/category/:category", handlers.GetPartsByCategory)
 	router.GET("/parts/:id/compatible", handlers.GetCompatibleParts)
 
+	// Part metadata endpoints
+	router.GET("/part-categories", handlers.GetPartCategories)
+	router.GET("/part-subcategories", handlers.GetPartSubcategories)
+	router.GET("/part-subcategories/:category", handlers.GetSubcategoriesByCategory)
+	router.GET("/compatible-models", handlers.GetCompatibleFirearmModels)
+	router.GET("/part-hierarchy", handlers.GetPartHierarchy)
+
 	// Compatibility Rules - Removed as per new schema design
 	// These routes are no longer needed as compatibility information is now embedded in the models
 
@@ -73,6 +80,13 @@ func SetupRouter() *gin.Engine {
 	router.GET("/listings/prebuilt/:prebuiltId", handlers.GetListingsByPrebuiltID)
 	router.GET("/listings/seller/:sellerId", handlers.GetListingsBySeller)
 	router.PATCH("/listings/:id/availability", handlers.UpdateListingAvailability)
+
+	// Manufacturers
+	router.GET("/manufacturers", handlers.GetManufacturers)
+	router.POST("/manufacturers", handlers.CreateManufacturer)
+	router.GET("/manufacturers/:id", handlers.GetManufacturerByID)
+	router.PUT("/manufacturers/:id", handlers.UpdateManufacturer)
+	router.DELETE("/manufacturers/:id", handlers.DeleteManufacturer)
 
 	return router
 }

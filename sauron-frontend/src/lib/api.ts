@@ -27,6 +27,18 @@ export interface FirearmModel {
   updated_at: string;
 }
 
+export interface Manufacturer {
+  id: number;
+  name: string;
+  description?: string;
+  logo?: string;
+  website?: string;
+  country?: string;
+  founded?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Part {
   id: number;
   name: string;
@@ -58,17 +70,6 @@ export interface Part {
   updated_at: string;
 }
 
-export interface Manufacturer {
-  id: number;
-  name: string;
-  description: string;
-  website: string;
-  logo_url: string;
-  contact_info: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ProductListing {
   id: number;
   seller_id: number;
@@ -93,6 +94,13 @@ export interface Seller {
   affiliate_data: Record<string, any>;
   created_at: string;
   updated_at: string;
+}
+
+// Part Hierarchy interface
+export interface PartHierarchyItem {
+  name: string;
+  id: string;
+  children?: PartHierarchyItem[];
 }
 
 // API Functions
@@ -355,4 +363,252 @@ export function useParts() {
   }, []);
 
   return { parts, loading, error };
+}
+
+// Fetch all manufacturers
+export async function getManufacturers(): Promise<Manufacturer[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/manufacturers`);
+    if (!response.ok) {
+      throw new Error(`Error fetching manufacturers: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Failed to fetch manufacturers:', error);
+    return [];
+  }
+}
+
+// Fetch a specific manufacturer by ID
+export async function getManufacturerById(id: number): Promise<Manufacturer | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/manufacturers/${id}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching manufacturer: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`Failed to fetch manufacturer with ID ${id}:`, error);
+    return null;
+  }
+}
+
+// Get unique categories from backend endpoint
+export async function getCategories(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-categories`);
+    if (!response.ok) {
+      throw new Error(`Error fetching categories: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    return [];
+  }
+}
+
+// Get subcategories for a specific category from backend endpoint
+export async function getSubcategories(category: string): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-subcategories/${encodeURIComponent(category)}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching subcategories: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`Failed to fetch subcategories for category ${category}:`, error);
+    return [];
+  }
+}
+
+// Get all subcategories grouped by category from backend endpoint
+export async function getAllSubcategories(): Promise<Record<string, string[]>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-subcategories`);
+    if (!response.ok) {
+      throw new Error(`Error fetching subcategories: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Failed to fetch all subcategories:', error);
+    return {};
+  }
+}
+
+// Get all compatible firearm models from backend endpoint
+export async function getCompatibleFirearmModels(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/compatible-models`);
+    if (!response.ok) {
+      throw new Error(`Error fetching compatible models: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Failed to fetch compatible firearm models:', error);
+    return [];
+  }
+}
+
+// Custom hook for fetching manufacturers with loading state
+export function useManufacturers() {
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchManufacturers = async () => {
+      try {
+        setLoading(true);
+        const data = await getManufacturers();
+        if (isMounted) {
+          setManufacturers(data);
+          setError(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchManufacturers();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array so it only runs once
+
+  return { manufacturers, loading, error };
+}
+
+// Custom hook for fetching categories and subcategories with loading state
+export function useCategoriesAndSubcategories() {
+  const [categories, setCategories] = useState<string[]>([]);
+  const [subcategories, setSubcategories] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesData, subcategoriesData] = await Promise.all([
+          getCategories(),
+          getAllSubcategories()
+        ]);
+        
+        if (isMounted) {
+          setCategories(categoriesData);
+          setSubcategories(subcategoriesData);
+          setError(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array so it only runs once
+
+  return { categories, subcategories, loading, error };
+}
+
+// Custom hook for fetching compatible firearm models with loading state
+export function useCompatibleFirearmModels() {
+  const [models, setModels] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchModels = async () => {
+      try {
+        setLoading(true);
+        const data = await getCompatibleFirearmModels();
+        if (isMounted) {
+          setModels(data);
+          setError(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchModels();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array so it only runs once
+
+  return { models, loading, error };
+}
+
+// Get part hierarchy from backend
+export async function getPartHierarchy(): Promise<PartHierarchyItem[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-hierarchy`);
+    if (!response.ok) {
+      throw new Error(`Error fetching part hierarchy: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Failed to fetch part hierarchy:', error);
+    return [];
+  }
+}
+
+// Custom hook for fetching part hierarchy
+export function usePartHierarchy() {
+  const [hierarchy, setHierarchy] = useState<PartHierarchyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchHierarchy = async () => {
+      try {
+        setLoading(true);
+        const data = await getPartHierarchy();
+        if (isMounted) {
+          setHierarchy(data);
+          setError(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchHierarchy();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { hierarchy, loading, error };
 } 

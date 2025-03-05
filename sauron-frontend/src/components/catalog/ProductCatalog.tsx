@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Part, getParts } from '@/lib/api';
 
 interface Seller {
   name: string;
@@ -11,71 +12,19 @@ interface Seller {
   logo: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  manufacturer: string;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  price: number;
-  isAssembly?: boolean;
-  componentType?: string;
-  sellers: Seller[];
-}
-
 interface ProductCatalogProps {
   componentFilter?: string;
   isAssembly?: boolean;
   onSelectProduct?: (productId: string) => void;
   selectedProductId?: string | null;
   returnToBuilder?: boolean;
-}
-
-// This would be replaced with actual API call
-function getProducts(componentFilter?: string, isAssembly?: boolean): Product[] {
-  // In a real implementation, this would be:
-  // const response = await fetch(`/api/listings?component=${componentFilter}&isAssembly=${isAssembly}`);
-  // return response.json();
-  
-  // For now, return mock data if we have a component filter
-  if (componentFilter) {
-    // Generate some mock products for the component
-    return Array.from({ length: 5 }, (_, i) => ({
-      id: `${componentFilter}-${i + 1}`,
-      name: `${componentFilter.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} ${isAssembly ? 'Assembly' : 'Part'} ${i + 1}`,
-      manufacturer: ['Aero Precision', 'Bravo Company', 'Daniel Defense', 'Geissele', 'Magpul'][i % 5],
-      rating: 4 + (i % 2) * 0.5,
-      reviewCount: 50 + i * 20,
-      image: '/placeholder.jpg',
-      price: isAssembly ? 150 + i * 25 : 50 + i * 15,
-      isAssembly: isAssembly,
-      componentType: componentFilter,
-      sellers: [
-        {
-          name: 'GunBroker',
-          price: isAssembly ? 150 + i * 25 : 50 + i * 15,
-          shipping: 10.00,
-          logo: '/placeholder-logo.jpg'
-        },
-        {
-          name: 'Brownells',
-          price: isAssembly ? 160 + i * 25 : 55 + i * 15,
-          shipping: 0,
-          logo: '/placeholder-logo.jpg'
-        },
-        {
-          name: 'Palmetto State Armory',
-          price: isAssembly ? 155 + i * 25 : 52 + i * 15,
-          shipping: 7.50,
-          logo: '/placeholder-logo.jpg'
-        }
-      ]
-    }));
-  }
-  
-  // Return empty array for now
-  return [];
+  filters?: {
+    category: string | null;
+    subcategories: string[];
+    manufacturers: string[];
+    compatibilities: string[];
+    priceRange: [number, number];
+  };
 }
 
 export default function ProductCatalog({ 
@@ -83,23 +32,138 @@ export default function ProductCatalog({
   isAssembly = false,
   onSelectProduct,
   selectedProductId,
-  returnToBuilder = false
+  returnToBuilder = false,
+  filters
 }: ProductCatalogProps) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [partsCache, setPartsCache] = useState<Part[] | null>(null);
 
+  // Fetch all parts once
   useEffect(() => {
-    // Fetch products when component mounts or filters change
-    const fetchedProducts = getProducts(componentFilter, isAssembly);
-    setProducts(fetchedProducts);
-    setLoading(false);
-  }, [componentFilter, isAssembly]);
+    let isMounted = true;
 
-  if (loading) {
+    const fetchAllParts = async () => {
+      if (partsCache !== null) return; // Only fetch if we don't have a cache
+      
+      try {
+        setLoading(true);
+        const parts = await getParts();
+        if (isMounted) {
+          setPartsCache(parts);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        if (isMounted) {
+          setError('Failed to load products. Please try again later.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchAllParts();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [partsCache]);
+
+  // Apply filters whenever they change
+  useEffect(() => {
+    if (!partsCache) return; // Wait until we have the parts
+
+    let filteredParts = [...partsCache];
+    
+    // Filter by component type if specified
+    if (componentFilter) {
+      filteredParts = filteredParts.filter(part => 
+        part.category?.toLowerCase().includes(componentFilter.toLowerCase()) ||
+        part.subcategory?.toLowerCase().includes(componentFilter.toLowerCase())
+      );
+    }
+    
+    // Filter by assembly status
+    if (isAssembly !== undefined) {
+      filteredParts = filteredParts.filter(part => part.is_prebuilt === isAssembly);
+    }
+    
+    // Apply additional filters if provided
+    if (filters) {
+      // Filter by category
+      if (filters.category) {
+        filteredParts = filteredParts.filter(part => 
+          part.category === filters.category
+        );
+      }
+      
+      // Filter by subcategories
+      if (filters.subcategories && filters.subcategories.length > 0) {
+        filteredParts = filteredParts.filter(part => 
+          filters.subcategories.includes(part.subcategory || '')
+        );
+      }
+      
+      // Filter by manufacturers
+      if (filters.manufacturers && filters.manufacturers.length > 0) {
+        filteredParts = filteredParts.filter(part => 
+          filters.manufacturers.includes(part.manufacturer_id.toString())
+        );
+      }
+      
+      // Filter by compatibilities
+      if (filters.compatibilities && filters.compatibilities.length > 0) {
+        filteredParts = filteredParts.filter(part => {
+          if (!part.compatible_models || !Array.isArray(part.compatible_models)) {
+            return false;
+          }
+          
+          return part.compatible_models.some(compatModel => 
+            typeof compatModel === 'object' && 
+            compatModel.model && 
+            filters.compatibilities.includes(compatModel.model)
+          );
+        });
+      }
+      
+      // Filter by price range
+      if (filters.priceRange) {
+        const [minPrice, maxPrice] = filters.priceRange;
+        filteredParts = filteredParts.filter(part => {
+          // If part has a price property
+          if ('price' in part && typeof part.price === 'number') {
+            return part.price >= minPrice && part.price <= maxPrice;
+          }
+          return true; // Include parts without price for now
+        });
+      }
+    }
+    
+    setProducts(filteredParts);
+  }, [partsCache, componentFilter, isAssembly, filters]);
+
+  if (loading && !partsCache) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
           Loading products...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 dark:text-red-400">
+          {error}
         </p>
       </div>
     );
@@ -121,9 +185,8 @@ export default function ProductCatalog({
         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" className="px-6 py-3">Product</th>
-            <th scope="col" className="px-6 py-3">Manufacturer</th>
-            <th scope="col" className="px-6 py-3">Rating</th>
-            <th scope="col" className="px-6 py-3">Price</th>
+            <th scope="col" className="px-6 py-3">Category</th>
+            <th scope="col" className="px-6 py-3">Compatibility</th>
             <th scope="col" className="px-6 py-3">Action</th>
           </tr>
         </thead>
@@ -133,7 +196,7 @@ export default function ProductCatalog({
               key={product.id} 
               product={product} 
               onSelectProduct={onSelectProduct}
-              isSelected={selectedProductId === product.id}
+              isSelected={selectedProductId === product.id.toString()}
               returnToBuilder={returnToBuilder}
             />
           ))}
@@ -143,25 +206,34 @@ export default function ProductCatalog({
   );
 }
 
-function ProductRow({ 
+const ProductRow = ({ 
   product, 
   onSelectProduct,
   isSelected,
   returnToBuilder
 }: { 
-  product: Product;
+  product: Part;
   onSelectProduct?: (productId: string) => void;
   isSelected?: boolean;
   returnToBuilder?: boolean;
-}) {
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const cheapestSeller = product.sellers.sort((a, b) => a.price - b.price)[0];
 
-  const handleSelectProduct = () => {
+  const handleSelectProduct = useCallback(() => {
     if (onSelectProduct) {
-      onSelectProduct(product.id);
+      onSelectProduct(product.id.toString());
     }
-  };
+  }, [onSelectProduct, product.id]);
+
+  // Get a list of compatible models for display
+  const compatibleModels = useMemo(() => {
+    return product.compatible_models
+      ? product.compatible_models
+          .filter(model => typeof model === 'object' && model.model)
+          .map(model => (model as any).model)
+          .join(', ')
+      : 'Not specified';
+  }, [product.compatible_models]);
 
   return (
     <>
@@ -169,9 +241,10 @@ function ProductRow({
         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 relative bg-gray-200 rounded">
-              {product.image && (
+              {/* If product has an image property, display it */}
+              {(product as any).image && (
                 <Image
-                  src={product.image}
+                  src={(product as any).image}
                   alt={product.name}
                   fill
                   className="object-cover rounded"
@@ -182,7 +255,7 @@ function ProductRow({
               <Link href={`/catalog/${product.id}`} className="hover:underline">
                 {product.name}
               </Link>
-              {product.isAssembly && (
+              {product.is_prebuilt && (
                 <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 rounded-full">
                   Assembly
                 </span>
@@ -196,27 +269,15 @@ function ProductRow({
             </div>
           </div>
         </td>
-        <td className="px-6 py-4">{product.manufacturer}</td>
         <td className="px-6 py-4">
-          <div className="flex items-center">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <svg 
-                  key={i} 
-                  className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-300' : 'text-gray-300 dark:text-gray-500'}`}
-                  aria-hidden="true" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="currentColor" 
-                  viewBox="0 0 22 20"
-                >
-                  <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
-                </svg>
-              ))}
-            </div>
-            <span className="ml-1 text-gray-500 dark:text-gray-400">({product.reviewCount})</span>
+          {product.category}
+          {product.subcategory && <span className="block text-xs text-gray-500">{product.subcategory}</span>}
+        </td>
+        <td className="px-6 py-4">
+          <div className="max-w-xs truncate" title={compatibleModels}>
+            {compatibleModels}
           </div>
         </td>
-        <td className="px-6 py-4">${product.price.toFixed(2)}</td>
         <td className="px-6 py-4">
           {returnToBuilder ? (
             <button 
@@ -238,30 +299,27 @@ function ProductRow({
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50 dark:bg-gray-700">
-          <td colSpan={5} className="px-6 py-4">
+          <td colSpan={4} className="px-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Specifications</h4>
-                <ul className="list-disc list-inside text-sm">
-                  <li>Specification 1</li>
-                  <li>Specification 2</li>
-                  <li>Specification 3</li>
-                </ul>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Description</h4>
+                <p className="text-sm">{product.description || 'No description available'}</p>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Compatibility</h4>
-                <p className="text-sm">Compatible with AR-15, M4, M16 platforms</p>
+                <p className="text-sm">{compatibleModels}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Price Comparison</h4>
-                <ul className="space-y-2">
-                  {product.sellers.slice(0, 3).map((seller, index) => (
-                    <li key={index} className="flex justify-between text-sm">
-                      <span>{seller.name}</span>
-                      <span>${seller.price.toFixed(2)}</span>
-                    </li>
-                  ))}
-                </ul>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Sub-Components</h4>
+                {product.sub_components && product.sub_components.length > 0 ? (
+                  <ul className="list-disc list-inside text-sm">
+                    {product.sub_components.map((subComponent, index) => (
+                      <li key={index}>{subComponent.name} ({subComponent.type})</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm">No sub-components</p>
+                )}
               </div>
             </div>
           </td>
