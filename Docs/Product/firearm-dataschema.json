@@ -1,0 +1,285 @@
+{
+    "id": 1,
+    "name": "AR-15",
+    "description": "A high-quality semi-automatic modular rifle platform.",
+    "manufacturer_id": 110,
+    "category": "Rifles",
+    "subcategory": "Assault",
+    "variant": "",
+    "specifications": {
+      "weight": "6.5 lbs",
+      "caliber": "5.56x45mm NATO"
+    },
+    "parts": {
+      "Upper Assembly": {
+        "type": "required",
+        "sub_parts": {
+          "Bolt Carrier Group": {
+            "type": "required",
+            "sub_parts": {
+              "Bolt": "required",
+              "Bolt Carrier": "required",
+              "Firing Pin": "required",
+              "Firing Pin Retaining Pin": "required",
+              "Cam Pin": "required",
+              "Gas Key": "required",
+              "Gas Key Screws": "required",
+              "Extractor": "required",
+              "Extractor Spring": "required",
+              "Extractor Pin": "required",
+              "Ejector": "required",
+              "Ejector Spring": "required",
+              "Ejector Roll Pin": "required",
+              "Gas Rings": "required"
+            }
+          },
+          "Barrel": {
+            "type": "required",
+            "sub_parts": {
+              "Barrel Extension": "required",
+              "Barrel Nut": "required",
+              "Gas Block": "required",
+              "Gas Tube": "required"
+            },
+            "compatible_parts": {
+              "Muzzle Devices": {
+                "Flash Suppressor": "optional",
+                "Muzzle Brake": "optional",
+                "Compensator": "optional",
+                "Silencer/Suppressor": "optional",
+                "Linear Compensator": "optional"
+              },
+              "Thread Protector": "optional",
+              "Barrel Shims": "optional",
+              "Crush Washer": "optional",
+              "Peel Washer": "optional",
+              "Thread Adapter": "optional"
+            }
+          },
+          "Handguard/Foregrip": {
+            "type": "required",
+            "sub_parts": {
+              "Rail System": "required"
+            },
+            "compatible_parts": {
+              "Free-Float Handguard": "optional",
+              "Drop-In Handguard": "optional",
+              "Heat Shield": "optional",
+              "Foregrip": {
+                "Vertical Foregrip": "optional",
+                "Angled Foregrip": "optional",
+                "Hand Stop": "optional"
+              }
+            }
+          },
+          "Upper Receiver": {
+            "type": "required",
+            "sub_parts": {
+              "Stripped Upper Receiver": "required",
+              "Forward Assist": "required",
+              "Forward Assist Spring": "required",
+              "Forward Assist Pin": "required",
+              "Dust Cover": "required",
+              "Dust Cover Spring": "required",
+              "Dust Cover Pin": "required",
+              "Charging Handle": "required",
+              "Charging Handle Latch": "required"
+            },
+            "compatible_parts": {
+              "Sights and Optics": {
+                "Iron Sights": {
+                  "Front Sight Post": "optional",
+                  "Front Sight Base": "optional",
+                  "Rear Sight Aperture": "optional",
+                  "Rear Sight Base": "optional",
+                  "Sight Adjustment Tool": "optional"
+                },
+                "Optical Sights": {
+                  "Red Dot Sight": "optional",
+                  "Holographic Sight": "optional",
+                  "Reflex Sight": "optional",
+                  "Magnified Scope": "optional",
+                  "Night Vision Scope": "optional",
+                  "Thermal Scope": "optional"
+                },
+                "Mounting Systems": {
+                  "Scope Rings": "optional",
+                  "Scope Mount": "optional",
+                  "Rail Riser": "optional"
+                },
+                "Accessories": {
+                  "Lens Covers": "optional",
+                  "Anti-Reflective Device": "optional",
+                  "Kill Flash": "optional",
+                  "Scope Turret Caps": "optional"
+                }
+              }
+            }
+          },
+          "Gas System": {
+            "type": "required",
+            "sub_parts": {
+              "Gas Tube": "required",
+              "Gas Block": "required"
+            },
+            "compatible_parts": {
+              "Gas Piston": "optional"
+            }
+          }
+        }
+      },
+      "Lower Assembly": {
+        "type": "required",
+        "sub_parts": {
+          "Lower Receiver": {
+            "type": "required",
+            "sub_parts": {
+              "Stripped Lower Receiver": "required",
+              "Receiver Extension": "required",
+              "Buffer Tube Castle Nut": "required",
+              "Buffer Tube End Plate": "required"
+            },
+            "compatible_parts": {
+              "Stocks": {
+                "Fixed Stock": "optional",
+                "Collapsible Stock": "optional",
+                "Folding Stock": "optional",
+                "Stock Latch": "optional",
+                "Cheek Riser": "optional",
+                "Recoil Pad": "optional"
+              }
+            }
+          },
+          "Trigger Assembly": {
+            "type": "required",
+            "sub_parts": {
+              "Trigger": "required",
+              "Trigger Spring": "required",
+              "Trigger Pin": "required",
+              "Hammer": "required",
+              "Hammer Spring": "required",
+              "Hammer Pin": "required",
+              "Disconnector": "required",
+              "Disconnector Spring": "required",
+              "Trigger Guard": "required",
+              "Trigger Guard Roll Pin": "required"
+            }
+          },
+          "Fire Control Group": {
+            "type": "required",
+            "sub_parts": {
+              "Safety Selector": "required",
+              "Safety Selector Detent": "required",
+              "Safety Selector Spring": "required"
+            },
+            "compatible_parts": {
+              "Single-Stage Trigger Kit": "optional",
+              "Two-Stage Trigger Kit": "optional"
+            }
+          },
+          "Magazine Release": {
+            "type": "required",
+            "sub_parts": {
+              "Magazine Catch": "required",
+              "Magazine Catch Spring": "required",
+              "Magazine Catch Button": "required"
+            }
+          },
+          "Bolt Catch": {
+            "type": "required",
+            "sub_parts": {
+              "Bolt Catch": "required",
+              "Bolt Catch Spring": "required",
+              "Bolt Catch Roll Pin": "required",
+              "Bolt Catch Plunger": "required"
+            }
+          },
+          "Buffer System": {
+            "type": "required",
+            "sub_parts": {
+              "Buffer": "required",
+              "Buffer Spring": "required",
+              "Buffer Retainer": "required",
+              "Buffer Retainer Spring": "required"
+            }
+          },
+          "Grip": {
+            "type": "required",
+            "sub_parts": {
+              "Grip": "required",
+              "Grip Screw": "required",
+              "Grip Washer": "required"
+            },
+            "compatible_parts": {
+              "Grips and Ergonomics": {
+                "Standard Grip": "optional",
+                "Ergonomic Grip": "optional"
+              }
+            }
+          }
+        }
+      },
+      "compatible_parts": {
+        "Magazines and Feeding Devices": {
+          "Detachable Box Magazine": "optional",
+          "Drum Magazine": "optional",
+          "Extended Magazine": "optional",
+          "Magazine Base Pad": "optional",
+          "Magazine Follower": "optional",
+          "Magazine Spring": "optional",
+          "Magazine Coupler": "optional",
+          "Magazine Loader/Unloader": "optional",
+          "Magazine Extension Tube": "optional"
+        },
+        "Rails and Mounting Accessories": {
+          "Rail Systems": {
+            "Picatinny Rail Section": "optional",
+            "M-LOK Rail Section": "optional",
+            "KeyMod Rail Section": "optional"
+          },
+          "Mounts": {
+            "Light Mount": "optional",
+            "Laser Mount": "optional",
+            "Bipod Mount": "optional",
+            "Sling Swivel Mount": "optional"
+          },
+          "Adapters": {
+            "Rail-to-Rail Adapter": "optional",
+            "Quick-Detach Sling Adapter": "optional"
+          }
+        },
+        "Miscellaneous Accessories": {
+          "Slings": {
+            "Single-Point Sling": "optional",
+            "Two-Point Sling": "optional",
+            "Three-Point Sling": "optional",
+            "Sling Swivel": "optional"
+          },
+          "Bipods and Tripods": {
+            "Folding Bipod": "optional",
+            "Adjustable Bipod": "optional",
+            "Tripod Adapter": "optional"
+          },
+          "Lights and Lasers": {
+            "Weapon Light": "optional",
+            "Laser Sight": "optional",
+            "IR Illuminator": "optional",
+            "Pressure Switch": "optional"
+          },
+          "Cleaning and Maintenance": {
+            "Bore Brush": "optional",
+            "Cleaning Rod": "optional",
+            "Patch Holder": "optional",
+            "Cleaning Jag": "optional",
+            "Bore Snake": "optional"
+          }
+        }
+      }
+    },
+    "images": [
+      "https://example.com/images/firearms/AR-15.jpg"
+    ],
+    "price_range": "$765 - $1569",
+    "created_at": "2025-03-03T16:16:06.244965-07:00",
+    "updated_at": "2025-03-03T16:16:06.244965-07:00"
+  }

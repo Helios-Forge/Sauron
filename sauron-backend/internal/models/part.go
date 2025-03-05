@@ -32,19 +32,19 @@ type Part struct {
 	IsPrebuilt bool `json:"is_prebuilt" gorm:"default:false" example:"false"`
 
 	// SubComponents that make up this part (for prebuilt parts)
-	SubComponents datatypes.JSON `json:"sub_components" gorm:"type:jsonb" swaggertype:"string" example:"{\"Barrel\": {\"id\": 5}, \"Gas Block\": {\"id\": 6}}"`
+	SubComponents datatypes.JSON `json:"sub_components" gorm:"type:jsonb" swaggertype:"string" example:"[{\"name\": \"Charging Handle Latch\", \"type\": \"required\"}, {\"name\": \"Charging Handle Spring\", \"type\": \"required\"}]"`
 
-	// List of compatible firearm models - removed NOT NULL constraint for migration
-	CompatibleModels datatypes.JSON `json:"compatible_models" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"AR-15\", \"M4\"]"`
+	// List of compatible firearm models with attachment points and requirement flags
+	CompatibleModels datatypes.JSON `json:"compatible_models" gorm:"type:jsonb" swaggertype:"string" example:"[{\"model\": \"AR-15\", \"attachment_point\": \"Upper Receiver\", \"is_required\": false}]"`
 
-	// Requirements for compatibility
-	Requires datatypes.JSON `json:"requires" gorm:"type:jsonb" swaggertype:"string" example:"{\"thread\": \"1/2-28\", \"exclude\": \"Non-Mil-Spec\"}"`
+	// Requirements for compatibility - parts this component depends on
+	Requires datatypes.JSON `json:"requires" gorm:"type:jsonb" swaggertype:"string" example:"[{\"part_id\": 1234, \"name\": \"Upper Receiver\"}]"`
 
 	// Specifications of the part
-	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"caliber\": \"5.56mm\", \"capacity\": \"30 rounds\", \"material\": \"Polymer\", \"thread\": \"1/2-28\"}"`
+	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"material\": \"Aluminum\", \"finish\": \"Anodized\", \"length\": \"7 inches\", \"weight\": \"0.54 lbs\"}"`
 
 	// Image URLs for the part
-	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/part1.jpg\", \"https://example.com/part2.jpg\"]"`
+	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg\"]"`
 
 	// Base price of the part
 	Price float64 `json:"price" gorm:"type:decimal(10,2)" example:"19.99"`
@@ -53,10 +53,10 @@ type Part struct {
 	Availability string `json:"availability" gorm:"size:50" example:"in_stock"`
 
 	// Weight of the part in pounds
-	Weight float64 `json:"weight" gorm:"type:decimal(6,2)" example:"0.25"`
+	Weight float64 `json:"weight" gorm:"type:decimal(6,2)" example:"0.54"`
 
 	// Dimensions of the part
-	Dimensions string `json:"dimensions" gorm:"size:50" example:"7.5 x 3.5 x 1.5 in"`
+	Dimensions string `json:"dimensions" gorm:"size:50" example:"5 x 3 x 2 in"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`

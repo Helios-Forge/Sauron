@@ -1,0 +1,47 @@
+{
+    "id": 1153,
+    "name": "Standard Charging Handle (AR-15)",
+    "description": "A quality Standard Charging Handle (AR-15) for your AR-15 build.",
+    "manufacturer_id": 128,
+    "category": "Upper Assembly",
+    "subcategory": "Charging Handle",
+    "is_prebuilt": false,
+    "sub_components": [
+      {
+        "name": "Charging Handle Latch",
+        "type": "required"
+      },
+      {
+        "name": "Charging Handle Spring",
+        "type": "required"
+      }
+    ],
+    "compatible_models": [
+      {
+        "model": "AR-15",
+        "attachment_point": "Upper Receiver",
+        "is_required": false
+      }
+    ],
+    "requires": [
+      {
+        "part_id": 1234,
+        "name": "Upper Receiver"
+      }
+    ],
+    "specifications": {
+      "material": "Aluminum",
+      "finish": "Anodized",
+      "length": "7 inches",
+      "weight": "0.54 lbs"
+    },
+    "images": [
+      "https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg"
+    ],
+    "price": 282.06,
+    "availability": "in_stock",
+    "weight": 0.54,
+    "dimensions": "5 x 3 x 2 in",
+    "created_at": "2025-03-04T16:14:03.681419-07:00",
+    "updated_at": "2025-03-04T16:14:03.681419-07:00"
+  }

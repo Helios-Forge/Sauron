@@ -14,6 +14,47 @@ import (
 
 var DB *gorm.DB
 
+// ConnectDB establishes a connection to the database and performs migrations
+// but does NOT auto-seed the database. Used for read-only operations.
+func ConnectDB() {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
+	)
+
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// Auto Migrate the schemas (still needed to ensure table structure is correct)
+	log.Println("Starting database migration...")
+
+	// Migrate all tables
+	err = DB.AutoMigrate(
+		&models.Manufacturer{},
+		&models.Seller{},
+		&models.FirearmModel{},
+		&models.Part{},
+		&models.PartSellerLink{},
+		&models.PrebuiltFirearm{},
+		&models.PrebuiltSellerLink{},
+		&models.UserSuggestion{},
+		&models.ProductListing{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate tables:", err)
+	}
+
+	log.Println("Database connection established for read-only operations")
+}
+
+// InitDB initializes the database connection and performs migrations
+// It will also automatically seed the database if it's empty
 func InitDB() {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
