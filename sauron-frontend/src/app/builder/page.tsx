@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { MainLayout } from '@/components/layout/MainLayout';
 import BuilderContent from '@/components/builder/BuilderContent';
+import { getStoredFirearmId } from '@/lib/builderStorage';
 
 export const metadata: Metadata = {
   title: "Firearm Builder - GunGuru",

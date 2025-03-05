@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, ReactElement } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   getFirearmModelById, 
   getParts, 
@@ -9,10 +10,20 @@ import {
   getSubComponentParts,
   getCompatiblePartsForModel,
   getRequiredPartsForModel,
+  getPartById,
   Part, 
   FirearmModel 
 } from '@/lib/api';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { 
+  saveBuilderState, 
+  loadBuilderState, 
+  hasStoredStateForFirearm, 
+  BuilderState, 
+  ComponentState,
+  updateStoredComponent
+} from '@/lib/builderStorage';
+import React from 'react';
 
 interface BuilderWorksheetProps {
   firearmId: string;
@@ -49,31 +60,79 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [compatibility, setCompatibility] = useState<'compatible' | 'warning' | 'incompatible'>('warning');
+  
+  // Keep track of whether we've processed URL parameters
+  const processedUrlParams = React.useRef(false);
+  
+  // Add router for navigation
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Fetch firearm model and parts when component mounts
   useEffect(() => {
     async function loadFirearmModelAndParts() {
-      if (!firearmId) return;
-      
       try {
         setLoading(true);
+        console.log(`Loading firearm model and parts for ID: ${firearmId}`);
         
-        // Load firearm model
-        const model = await getFirearmModelById(parseInt(firearmId, 10));
-        if (!model) {
-          throw new Error(`Firearm model with ID ${firearmId} not found`);
+        // Check if we have stored state for this firearm
+        if (hasStoredStateForFirearm(firearmId)) {
+          const storedState = loadBuilderState();
+          if (storedState) {
+            console.log('Found stored state for firearm:', storedState);
+            
+            // Restore state from storage
+            setFirearmModel(storedState.firearmModel ? {
+              id: storedState.firearmModel.id,
+              name: storedState.firearmModel.name,
+              // Add required properties with defaults
+              description: "",
+              manufacturer_id: 0,
+              category: "",
+              subcategory: "",
+              variant: "",
+              specifications: {},
+              compatible_parts: {},
+              parts: {},
+              images: [],
+              price_range: "",
+              created_at: "",
+              updated_at: ""
+            } as FirearmModel : null);
+            
+            // Convert ComponentState[] to ComponentItem[]
+            const storedComponentItems = convertStoredToComponentItems(storedState.components);
+            console.log('Converted stored components to component items:', storedComponentItems);
+            setComponentStructure(storedComponentItems);
+            setExpandedItems(storedState.expandedItems);
+            
+            // Update the build summary with the loaded components
+            updateBuildSummary(storedComponentItems);
+            
+            setLoading(false);
+            return;
+          }
         }
         
+        // If no stored state, load from API
+        console.log('No stored state found, loading from API');
+        // Fetch the firearm model
+        const model = await getFirearmModelById(parseInt(firearmId));
+        console.log('Fetched firearm model:', model);
         setFirearmModel(model);
         
-        // Load all available parts using the standard endpoint
-        const allParts = await getParts();
-        setAvailableParts(allParts);
+        // Fetch all parts
+        const parts = await getParts();
+        console.log(`Fetched ${parts.length} parts`);
+        setAvailableParts(parts);
         
-        // Don't build component structure here, it will be triggered by the firearmModel change
-      } catch (err) {
-        console.error('Error loading firearm model or parts:', err);
-        setError(err instanceof Error ? err : new Error('Failed to load firearm model or parts'));
+        // Process model details to create component structure
+        if (model) {
+          await buildComponentStructure();
+        }
+      } catch (error) {
+        console.error('Error loading firearm model:', error);
+        setError(error instanceof Error ? error : new Error('Unknown error occurred'));
       } finally {
         setLoading(false);
       }
@@ -91,49 +150,27 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Build component structure based on the model requirements and available parts
   const buildComponentStructure = async () => {
-    console.log(`Building component structure for ${firearmModel?.name}`);
+    console.log('Building component structure for model:', firearmModel);
     
-    // If model doesn't have parts, set empty component structure and return
     if (!firearmModel || !firearmModel.parts) {
-      console.log('No parts found in firearm model, setting empty component structure');
+      console.warn('No model or model.parts found, setting empty component structure');
       setComponentStructure([]);
       return;
     }
     
-    console.log(`Model name: ${firearmModel.name}`);
-    console.log(`Model parts:`, firearmModel.parts);
+    const allParts = availableParts.slice();
     
-    // Get required categories from the model's parts field
-    const requiredCategories = Object.keys(firearmModel.parts);
-    
-    // Optional categories from compatible_parts
-    const optionalCategories = firearmModel.compatible_parts ? 
-      Object.keys(firearmModel.compatible_parts) : [];
-    
-    console.log("Required categories:", requiredCategories);
-    console.log("Optional categories:", optionalCategories);
-
-    // Filter parts to only include those compatible with this model
-    const compatibleParts = availableParts.filter(part => {
-      return part.compatible_models && 
-             Array.isArray(part.compatible_models) &&
-             part.compatible_models.some(compatModel => 
-               compatModel && typeof compatModel === 'object' && 
-               compatModel.model === firearmModel.name
-             );
-    });
-    
-    console.log(`Found ${compatibleParts.length} compatible parts for ${firearmModel.name}`);
-    
-    // Group parts by category and subcategory for easy lookup
+    // Organize parts by category for easier lookup
     const partsByCategory: Record<string, Part[]> = {};
-    compatibleParts.forEach(part => {
+    allParts.forEach(part => {
+      if (!part.category) return;
+      
       if (!partsByCategory[part.category]) {
         partsByCategory[part.category] = [];
       }
       partsByCategory[part.category].push(part);
       
-      // Also index by subcategory if it exists
+      // Also add to subcategory if it exists
       if (part.subcategory) {
         if (!partsByCategory[part.subcategory]) {
           partsByCategory[part.subcategory] = [];
@@ -142,122 +179,80 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       }
     });
     
-    // Find all compatible assemblies (pre-built parts)
-    const assemblies = compatibleParts.filter(part => part.is_prebuilt && isAssembly(part));
+    console.log('Parts organized by category:', Object.keys(partsByCategory));
     
-    console.log("Compatible assemblies found:", assemblies.map(a => ({
-      id: a.id, 
-      name: a.name, 
-      category: a.category, 
-      subcategory: a.subcategory,
-      sub_components: a.sub_components
-    })));
+    // Process required categories from the firearm model
+    const components: ComponentItem[] = [];
+    let nextComponentId = 1;
     
-    // Process the top-level components from the parts field
-    const topLevelComponents: ComponentItem[] = [];
+    // Extract main categories from the model.parts structure
+    const mainCategories = Object.keys(firearmModel.parts || {});
+    console.log('Main categories from model:', mainCategories);
     
-    // Process required categories from the parts field
-    for (const category of requiredCategories) {
-      const categoryData = firearmModel.parts[category];
-      const isRequired = categoryData.type === 'required';
+    // Process each main category
+    for (const category of mainCategories) {
+      const categoryDetails = firearmModel.parts[category];
+      const isRequired = categoryDetails.type === 'required';
       
-      // Find matching assembly for this category
-      const matchingAssemblies = assemblies.filter(a => a.category === category);
-      const matchingAssembly = matchingAssemblies.length > 0 ? matchingAssemblies[0] : null;
+      console.log(`Processing category: ${category}, required: ${isRequired}`);
       
-      // Create the component item
+      // Create the main component item
       const component: ComponentItem = {
-        id: matchingAssembly ? matchingAssembly.id : Math.floor(Math.random() * 10000),
+        id: nextComponentId++,
         name: category,
-        description: `${category} component`,
         category: category,
-        subcategory: matchingAssembly?.subcategory || "",
+        subcategory: '',
+        description: '',
         isRequired: isRequired,
         isPrebuilt: false,
         selectedPart: null,
         subComponents: [],
-        partData: matchingAssembly || null as any
+        partData: {} as Part
       };
       
-      // If we found a matching assembly, use its data
-      if (matchingAssembly) {
-        component.isPrebuilt = true;
-        component.partData = matchingAssembly;
-      }
-      
-      // Process sub-parts recursively if they exist
-      if (categoryData.sub_parts) {
-        component.subComponents = processSubParts(
-          categoryData.sub_parts,
-          component.id,
-          partsByCategory,
-          isRequired
-        );
-      }
-      
-      topLevelComponents.push(component);
-    }
-    
-    // Process optional categories from compatible_parts
-    for (const category of optionalCategories) {
-      // Skip if this category is already in the required list
-      if (requiredCategories.includes(category)) continue;
-      
-      // Find matching assembly for this category
-      const matchingAssemblies = assemblies.filter(a => a.category === category);
-      const matchingAssembly = matchingAssemblies.length > 0 ? matchingAssemblies[0] : null;
-      
-      // Create the component item
-      const component: ComponentItem = {
-        id: matchingAssembly ? matchingAssembly.id : Math.floor(Math.random() * 10000),
-        name: category,
-        description: `${category} component`,
-        category: category,
-        subcategory: matchingAssembly?.subcategory || "",
-        isRequired: false,
-        isPrebuilt: false,
-        selectedPart: null,
-        subComponents: [],
-        partData: matchingAssembly || null as any
-      };
-      
-      // If we found a matching assembly, use its data
-      if (matchingAssembly) {
-        component.isPrebuilt = true;
-        component.partData = matchingAssembly;
-      }
-      
-      // Process compatible parts for this category if they exist
-      if (firearmModel.compatible_parts[category]) {
-        // Handle different formats of compatible_parts data
-        const categoryData = firearmModel.compatible_parts[category];
+      // Process subparts if they exist
+      if (categoryDetails.sub_parts) {
+        const subParts = categoryDetails.sub_parts;
+        console.log(`Processing ${Object.keys(subParts).length} sub-parts for ${category}`);
         
-        if (typeof categoryData === 'object' && categoryData !== null) {
-          component.subComponents = processCompatibleParts(
-            categoryData,
-            component.id,
-            partsByCategory
-          );
+        // Create component items for each subpart
+        for (const subPartName in subParts) {
+          const subPartDetails = subParts[subPartName];
+          const isSubPartRequired = subPartDetails.type === 'required';
+          
+          console.log(`  Sub-part: ${subPartName}, required: ${isSubPartRequired}`);
+          
+          const subComponent: ComponentItem = {
+            id: nextComponentId++,
+            name: subPartName,
+            category: subPartName,
+            subcategory: category, // Parent category as subcategory
+            description: '',
+            isRequired: isSubPartRequired,
+            isPrebuilt: false,
+            selectedPart: null,
+            parentId: component.id,
+            subComponents: [],
+            partData: {} as Part
+          };
+          
+          // If the subpart has its own sub-parts, process them too
+          if (subPartDetails.sub_parts) {
+            // Process sub-sub-parts (third level)
+            // This is a simplified version, actual logic would be recursive
+            console.log(`  Processing sub-sub-parts for ${subPartName}`);
+            // ... recursively process sub-parts
+          }
+          
+          component.subComponents.push(subComponent);
         }
       }
       
-      topLevelComponents.push(component);
+      components.push(component);
     }
     
-    // Expand assemblies by default
-    setExpandedItems(topLevelComponents.filter(c => c.isPrebuilt || (c.subComponents && c.subComponents.length > 0)).map(c => c.id));
-    
-    console.log("Final component structure:", topLevelComponents.map(c => ({
-      id: c.id,
-      category: c.category,
-      subcategory: c.subcategory,
-      isRequired: c.isRequired,
-      isPrebuilt: c.isPrebuilt,
-      subComponentsCount: c.subComponents.length
-    })));
-    
-    // Update component structure
-    setComponentStructure(topLevelComponents);
+    console.log('Final component structure:', components);
+    setComponentStructure(components);
   };
 
   // Helper function to process sub-parts from the model schema
@@ -368,128 +363,149 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Handle selection of a part
   const handleSelectPart = (componentId: number, part: Part) => {
-    setComponentStructure(prev => {
-      // Create a copy of the component structure to modify
-      const updated = [...prev];
+    console.log(`handleSelectPart called for component ${componentId} with part:`, part);
+    
+    // Check if the componentId exists in our structure
+    let componentExists = false;
+    const checkComponentExists = (items: ComponentItem[]): boolean => {
+      for (const item of items) {
+        if (item.id === componentId) {
+          componentExists = true;
+          return true;
+        }
+        if (item.subComponents && item.subComponents.length > 0) {
+          if (checkComponentExists(item.subComponents)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    
+    checkComponentExists(componentStructure);
+    
+    if (!componentExists) {
+      console.error(`Component with ID ${componentId} not found in the component structure`);
       
-      // Find and update the component in the structure
+      // If we're coming from a URL parameter and can't find the exact component,
+      // try to find a component with a matching category name
+      if (part && part.category) {
+        console.log(`Attempting to find a component matching category: ${part.category}`);
+        
+        const findComponentIdByCategory = (items: ComponentItem[]): number | null => {
+          for (const item of items) {
+            if (item.category.toLowerCase() === part.category.toLowerCase()) {
+              console.log(`Found matching component by category:`, item);
+              return item.id;
+            }
+            
+            if (item.subComponents && item.subComponents.length > 0) {
+              const foundId = findComponentIdByCategory(item.subComponents);
+              if (foundId !== null) {
+                return foundId;
+              }
+            }
+          }
+          return null;
+        };
+        
+        const matchingComponentId = findComponentIdByCategory(componentStructure);
+        
+        if (matchingComponentId !== null) {
+          console.log(`Using matching component ID: ${matchingComponentId} instead of ${componentId}`);
+          // Update the componentId
+          return handleSelectPart(matchingComponentId, part);
+        } else {
+          console.error(`No matching component found for category: ${part.category}`);
+        }
+      }
+      
+      return; // Exit if no component found
+    }
+    
+    setComponentStructure(prevStructure => {
+      console.log('Previous component structure:', prevStructure);
+      const newStructure = [...prevStructure];
+      
       const updateComponent = (items: ComponentItem[]): boolean => {
         for (let i = 0; i < items.length; i++) {
           if (items[i].id === componentId) {
+            console.log(`Found matching component to update:`, items[i]);
             items[i].selectedPart = part;
+            items[i].isPrebuilt = false;
+            console.log(`Component updated with new part`);
             return true;
           }
           
-          // Check subComponents only if it exists
           if (items[i].subComponents && items[i].subComponents.length > 0) {
-            const found = updateComponent(items[i].subComponents);
-            if (found) return true;
+            if (updateComponent(items[i].subComponents)) {
+              return true;
+            }
           }
         }
+        
         return false;
       };
       
-      updateComponent(updated);
+      const found = updateComponent(newStructure);
+      console.log(`Component ${found ? 'was' : 'was NOT'} found and updated`);
       
-      // Update build statistics
-      updateBuildSummary(updated);
+      // Update stored state
+      updateStoredComponent(firearmId, componentId, part, false);
+      console.log('Builder state updated in localStorage');
       
-      return updated;
+      return newStructure;
     });
   };
 
   // Handle selection of an assembly
   const handleSelectAssembly = (assemblyId: number, assembly: Part) => {
-    console.log("Selecting assembly:", assembly);
-    console.log("Assembly sub_components:", assembly.sub_components);
+    console.log(`handleSelectAssembly called for assembly ${assemblyId} with part:`, assembly);
     
-    setComponentStructure(prev => {
-      // Create a copy of the component structure to modify
-      const updated = [...prev];
+    if (!isAssembly(assembly)) {
+      console.error('Part is not an assembly, aborting selection');
+      return;
+    }
+    
+    setComponentStructure(prevStructure => {
+      console.log('Previous component structure:', prevStructure);
+      const newStructure = [...prevStructure];
       
-      // Find and update the assembly in the structure
       const updateComponent = (items: ComponentItem[]): boolean => {
         for (let i = 0; i < items.length; i++) {
           if (items[i].id === assemblyId) {
-            console.log(`Found assembly to update: ${items[i].category}`);
-            
-            // Select the assembly
+            console.log(`Found matching assembly component to update:`, items[i]);
             items[i].selectedPart = assembly;
-            
-            // Mark component as pre-built
             items[i].isPrebuilt = true;
             
-            // If this is an assembly with sub-components, auto-select them too
+            // If we're selecting an assembly, auto-fill its sub-components
             if (items[i].subComponents && items[i].subComponents.length > 0) {
-              console.log(`Processing ${items[i].subComponents.length} subcomponents`);
-              
-              // Get the array of subcomponent names from the assembly
-              const assemblySubComponents = Array.isArray(assembly.sub_components) 
-                ? assembly.sub_components.map(sc => sc.name) 
-                : [];
-              
-              console.log("Assembly subcomponent names:", assemblySubComponents);
-              
-              // Process each sub-component
-              items[i].subComponents.forEach(subComponent => {
-                // Check if this subcomponent is included in the assembly
-                const isIncludedInAssembly = assemblySubComponents.some(subName => 
-                  subName === subComponent.category || 
-                  subName === subComponent.subcategory ||
-                  subName === subComponent.name
-                );
-                
-                console.log(`Subcomponent ${subComponent.category} is included in assembly: ${isIncludedInAssembly}`);
-                
-                if (isIncludedInAssembly) {
-                  // Create a virtual part to represent that it's included in the assembly
-                  subComponent.selectedPart = {
-                    ...assembly, // Use assembly as base to get manufacturer, etc.
-                    id: -100000 - subComponent.id, // Use negative ID to indicate virtual
-                    name: `Included in ${assembly.name}`,
-                    price: 0, // Price is already included in the assembly
-                    description: `Part of the ${assembly.name} assembly`,
-                    category: subComponent.category,
-                    subcategory: subComponent.subcategory,
-                    is_prebuilt: false,
-                    fulfilled_by_assembly: true, // Add a flag to mark it as fulfilled by an assembly
-                    parent_assembly_id: assembly.id, // Reference back to the parent assembly
-                    sub_components: [],
-                    compatible_models: assembly.compatible_models,
-                    requires: [],
-                    specifications: {},
-                    images: [],
-                    availability: assembly.availability,
-                    weight: 0,
-                    dimensions: "",
-                    created_at: "",
-                    updated_at: ""
-                  } as any;
-                  
-                  // Recursively fulfill any deeper sub-components if they exist
-                  if (subComponent.subComponents && subComponent.subComponents.length > 0) {
-                    fulfillSubComponentsFromAssembly(subComponent.subComponents, assembly);
-                  }
-                }
-              });
+              console.log(`Filling subcomponents from assembly for ${items[i].subComponents.length} items`);
+              fulfillSubComponentsFromAssembly(items[i].subComponents, assembly);
             }
+            
+            console.log(`Assembly component updated`);
             return true;
           }
           
           if (items[i].subComponents && items[i].subComponents.length > 0) {
-            const found = updateComponent(items[i].subComponents);
-            if (found) return true;
+            if (updateComponent(items[i].subComponents)) {
+              return true;
+            }
           }
         }
+        
         return false;
       };
       
-      updateComponent(updated);
+      const found = updateComponent(newStructure);
+      console.log(`Assembly component ${found ? 'was' : 'was NOT'} found and updated`);
       
-      // Update build statistics
-      updateBuildSummary(updated);
+      // Update stored state
+      updateStoredComponent(firearmId, assemblyId, assembly, true);
+      console.log('Builder state updated in localStorage with assembly');
       
-      return updated;
+      return newStructure;
     });
   };
 
@@ -529,52 +545,52 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Update build summary and notify parent component
   const updateBuildSummary = (components: ComponentItem[]) => {
-    let price = 0;
+    console.log('updateBuildSummary called with components:', components);
+    
     let selectedCount = 0;
     let requiredCount = 0;
+    let totalPrice = 0;
+    let compatibility: 'compatible' | 'warning' | 'incompatible' = 'compatible';
     
-    // Calculate price, count selected parts, and check compatibility
     const processComponent = (item: ComponentItem) => {
-      if (item.isRequired) requiredCount++;
-      
-      if (item.selectedPart) {
-        selectedCount++;
-        price += item.selectedPart.price;
-        
-        // If this is an assembly, don't count sub-components separately
-        // as they're already included in the assembly price
-        if (item.isPrebuilt && item.subComponents) {
-          return;
+      if (item.isRequired) {
+        requiredCount++;
+        if (item.selectedPart) {
+          selectedCount++;
+        } else {
+          // If a required component is not selected, mark as warning
+          compatibility = 'warning';
         }
+      } else if (item.selectedPart) {
+        selectedCount++;
       }
       
-      // Process sub-components if this item doesn't have a selection yet
-      if (item.subComponents && item.subComponents.length > 0 && (!item.selectedPart || !item.isPrebuilt)) {
+      // Add price if part is selected and has a price
+      if (item.selectedPart && item.selectedPart.price) {
+        totalPrice += item.selectedPart.price;
+      }
+      
+      // Process subcomponents
+      if (item.subComponents) {
         item.subComponents.forEach(processComponent);
       }
     };
     
     components.forEach(processComponent);
     
-    // Update local state
-    setTotalPrice(price);
-    
-    // Determine compatibility status
-    let status: 'compatible' | 'warning' | 'incompatible' = 'compatible';
-    if (selectedCount < requiredCount) {
-      status = 'warning'; // Not all required components are selected
-    }
-    
-    setCompatibility(status);
-    
-    // Notify parent component of the update
-    onBuildUpdate(
+    console.log('Build summary calculated:', {
       selectedCount,
       requiredCount,
-      price,
-      status,
-      flattenComponents(components)
-    );
+      totalPrice,
+      compatibility
+    });
+    
+    // Set state to trigger the callback
+    setTotalPrice(totalPrice);
+    setCompatibility(compatibility);
+    
+    // Call the parent callback to update the build status
+    onBuildUpdate(selectedCount, requiredCount, totalPrice, compatibility, flattenComponents(components));
   };
 
   // Helper to flatten component structure for parent component
@@ -597,41 +613,32 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     return flattened;
   };
 
-  // Open part selection modal
+  // Open part selection page
   const handleAddPart = (component: ComponentItem) => {
-    // Filter available parts to those matching this component's category
-    const compatibleParts = availableParts.filter(part => 
-      (part.category === component.category || 
-       (component.subcategory && part.category === component.subcategory) ||
-       part.subcategory === component.category) && 
-      !part.is_prebuilt
-    );
+    // Navigate to catalog with appropriate filters
+    console.log('handleAddPart called with component:', component);
     
-    if (compatibleParts.length > 0) {
-      // In a real implementation, this would open a modal or drawer to select a part
-      // For now, just select the first compatible part as a placeholder
-      handleSelectPart(component.id, compatibleParts[0]);
-    } else {
-      console.log(`No compatible parts found for ${component.category}`);
-    }
+    const modelName = firearmModel?.name || "";
+    const componentCategory = component.category || "";
+    
+    console.log(`Navigating to catalog with component category: ${componentCategory}`);
+    
+    // Construct the URL with query parameters for filtering
+    router.push(`/catalog?component=${encodeURIComponent(componentCategory)}&compatibility=${encodeURIComponent(modelName)}&returnToBuilder=true&firearmId=${firearmId}&component_category=${encodeURIComponent(componentCategory)}&isAssembly=false`);
   };
 
-  // Open assembly selection modal
+  // Open assembly selection page
   const handleAddAssembly = (component: ComponentItem) => {
-    // Filter available assemblies for this component type
-    const compatibleAssemblies = availableParts.filter(part => 
-      part.category === component.category && 
-      part.is_prebuilt && 
-      isAssembly(part)
-    );
+    // Navigate to catalog with appropriate filters for assemblies
+    console.log('handleAddAssembly called with component:', component);
     
-    if (compatibleAssemblies.length > 0) {
-      // In a real implementation, this would open a modal or drawer to select an assembly
-      // For now, just select the first compatible assembly as a placeholder
-      handleSelectAssembly(component.id, compatibleAssemblies[0]);
-    } else {
-      console.log(`No compatible assemblies found for ${component.category}`);
-    }
+    const modelName = firearmModel?.name || "";
+    const componentCategory = component.category || "";
+    
+    console.log(`Navigating to catalog with component category: ${componentCategory} (for assembly)`);
+    
+    // Construct the URL with query parameters for filtering
+    router.push(`/catalog?component=${encodeURIComponent(componentCategory)}&compatibility=${encodeURIComponent(modelName)}&returnToBuilder=true&firearmId=${firearmId}&component_category=${encodeURIComponent(componentCategory)}&isAssembly=true`);
   };
 
   // Add a function to check if a component is an assembly
@@ -641,6 +648,150 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       component.subComponents !== null && 
       component.subComponents.length > 0;
   };
+
+  // Helper function to convert stored component state to component items
+  const convertStoredToComponentItems = (storedComponents: ComponentState[]): ComponentItem[] => {
+    return storedComponents.map(stored => ({
+      id: stored.id,
+      name: stored.category, // Use category as name
+      description: "",
+      category: stored.category,
+      subcategory: stored.subcategory,
+      isRequired: stored.isRequired,
+      isPrebuilt: stored.isPrebuilt,
+      selectedPart: stored.selectedPart,
+      parentId: stored.parentId,
+      subComponents: stored.subComponents ? convertStoredToComponentItems(stored.subComponents) : [],
+      partData: {} as Part // This might need proper initialization if used
+    }));
+  };
+  
+  // Save state when component structure or expanded items change
+  useEffect(() => {
+    if (firearmModel && componentStructure.length > 0) {
+      // Convert ComponentItem[] to ComponentState[]
+      const componentStates = convertComponentItemsToStored(componentStructure);
+      
+      const stateToSave: BuilderState = {
+        firearmId,
+        firearmModel: {
+          id: firearmModel.id,
+          name: firearmModel.name
+        },
+        components: componentStates,
+        expandedItems
+      };
+      
+      saveBuilderState(stateToSave);
+    }
+  }, [firearmModel, componentStructure, expandedItems, firearmId]);
+  
+  // Helper function to convert component items to storable state
+  const convertComponentItemsToStored = (components: ComponentItem[]): ComponentState[] => {
+    return components.map(component => ({
+      id: component.id,
+      category: component.category,
+      subcategory: component.subcategory,
+      isRequired: component.isRequired,
+      isPrebuilt: component.isPrebuilt,
+      selectedPart: component.selectedPart,
+      parentId: component.parentId,
+      subComponents: component.subComponents ? convertComponentItemsToStored(component.subComponents) : []
+    }));
+  };
+
+  // Effect to handle URL parameters for part selection
+  useEffect(() => {
+    if (processedUrlParams.current) return;
+    
+    // Using new parameter names for clarity
+    const componentCategory = searchParams.get('component_category');
+    const selectedPartId = searchParams.get('selected_part_id');
+    const isAssemblyParam = searchParams.get('isAssembly') === 'true';
+    
+    console.log('Raw URL Parameters:', { 
+      componentCategory, 
+      selectedPartId, 
+      isAssemblyParam,
+      searchParamsEntries: Array.from(searchParams.entries())
+    });
+    
+    // If we have URL parameters and the component structure is loaded
+    if (componentCategory && selectedPartId && componentStructure.length > 0 && !loading) {
+      processedUrlParams.current = true;
+      console.log('Processing URL parameters to select part by category');
+      
+      // Parse the part ID
+      const partId = parseInt(selectedPartId, 10);
+      if (isNaN(partId)) {
+        console.error(`Failed to parse selected part ID "${selectedPartId}" as number`);
+        return;
+      }
+      
+      console.log(`Looking for component matching category: ${componentCategory}`);
+      
+      // Find the component with matching category
+      const findComponentByCategory = (items: ComponentItem[]): ComponentItem | null => {
+        for (const item of items) {
+          // Check for an exact category match or a case-insensitive match
+          if (item.category === componentCategory || 
+              item.category.toLowerCase() === componentCategory.toLowerCase()) {
+            return item;
+          }
+          
+          if (item.subComponents && item.subComponents.length > 0) {
+            const found = findComponentByCategory(item.subComponents);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const matchingComponent = findComponentByCategory(componentStructure);
+      
+      if (!matchingComponent) {
+        console.error(`No component found matching category: ${componentCategory}`);
+        return;
+      }
+      
+      console.log(`Found matching component:`, matchingComponent);
+      
+      // Function to process the selection
+      const applyPartSelection = async () => {
+        try {
+          // Fetch the part details
+          console.log(`Fetching part with ID ${partId}`);
+          const part = await getPartById(partId);
+          
+          if (part) {
+            console.log(`Successfully fetched part:`, part);
+            
+            // Apply the selection to the component
+            if (isAssemblyParam && isAssembly(part)) {
+              console.log(`Selecting as assembly for component ${matchingComponent.id}`);
+              handleSelectAssembly(matchingComponent.id, part);
+            } else {
+              console.log(`Selecting as regular part for component ${matchingComponent.id}`);
+              handleSelectPart(matchingComponent.id, part);
+            }
+          } else {
+            console.error(`Part with ID ${partId} not found`);
+          }
+        } catch (error) {
+          console.error("Error fetching selected part:", error);
+        }
+      };
+      
+      applyPartSelection();
+    }
+  }, [searchParams, componentStructure, loading]);
+
+  // Update the build summary whenever the component structure changes
+  useEffect(() => {
+    if (componentStructure.length > 0) {
+      updateBuildSummary(componentStructure);
+    }
+  }, [componentStructure]);
 
   // Render loading state
   if (loading) {

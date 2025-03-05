@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import BuilderWorksheet from '@/components/builder/BuilderWorksheet';
 import FirearmSelector from '@/components/builder/FirearmSelector';
 import BuildSummary from '@/components/builder/BuildSummary';
 import { Part } from '@/lib/api';
+import { 
+  getStoredFirearmId, 
+  loadBuilderState, 
+  clearBuilderState 
+} from '@/lib/builderStorage';
 
 // Define the builder state interface for type safety
 interface BuilderState {
@@ -24,6 +29,7 @@ interface BuilderState {
 
 export default function BuilderContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [builderState, setBuilderState] = useState<BuilderState>({
     firearmId: null,
@@ -35,24 +41,46 @@ export default function BuilderContent() {
     components: []
   });
 
-  // Load saved state from localStorage on component mount
+  // Load state from localStorage on component mount or when returning from catalog
   useEffect(() => {
-    const savedState = localStorage.getItem('builderState');
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        setBuilderState(parsedState);
-      } catch (error) {
-        console.error('Error parsing saved builder state:', error);
-        // If there's an error, just use the default state
-      }
+    // Check URL parameters for returning from catalog
+    const componentId = searchParams.get('componentId');
+    const productId = searchParams.get('productId');
+    const firearmIdParam = searchParams.get('firearmId');
+    const isAssembly = searchParams.get('isAssembly') === 'true';
+    
+    // If we're returning from catalog with a selected part
+    if (firearmIdParam && componentId && productId) {
+      // The BuilderWorksheet will handle updating the component with the selected part
+      // We just need to ensure we're in the right build step
+      setBuilderState(prev => ({
+        ...prev,
+        firearmId: firearmIdParam,
+        buildStep: 'select-components'
+      }));
+      
+      // Remove the query parameters to prevent reapplying on refresh
+      // This is a Next.js pattern for modifying URL without a full page reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('componentId');
+      url.searchParams.delete('productId');
+      url.searchParams.delete('isAssembly');
+      window.history.replaceState({}, '', url.toString());
+      
+      return;
     }
-  }, []);
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('builderState', JSON.stringify(builderState));
-  }, [builderState]);
+    
+    // Check if we have a stored firearm ID
+    const storedFirearmId = getStoredFirearmId();
+    if (storedFirearmId) {
+      // Load state from our persistence layer
+      setBuilderState(prev => ({
+        ...prev,
+        firearmId: storedFirearmId,
+        buildStep: 'select-components'
+      }));
+    }
+  }, [searchParams]);
 
   // Handle firearm model selection
   const handleModelSelected = (modelId: string) => {
@@ -93,6 +121,7 @@ export default function BuilderContent() {
 
   // Handle clearing the build
   const handleClearBuild = () => {
+    clearBuilderState();
     setBuilderState({
       firearmId: null,
       buildStep: 'select-model',

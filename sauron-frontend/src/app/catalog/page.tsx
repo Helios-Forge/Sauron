@@ -14,6 +14,7 @@ export default function CatalogPage() {
   const isAssembly = searchParams.get('isAssembly') === 'true';
   const firearmId = searchParams.get('firearmId');
   const returnToBuilder = searchParams.get('returnToBuilder') === 'true';
+  const compatibility = searchParams.get('compatibility');
   
   // State for selected product
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -24,7 +25,16 @@ export default function CatalogPage() {
     
     // If we're selecting a product to return to the builder, redirect back
     if (returnToBuilder && firearmId && componentId) {
-      router.push(`/builder?firearmId=${firearmId}&componentId=${componentId}&productId=${productId}&isAssembly=${isAssembly}`);
+      console.log('Redirecting back to builder with params:', {
+        firearmId,
+        component_category: componentId, // This is actually the category from our URL
+        selected_part_id: productId,
+        isAssembly
+      });
+      
+      // We're getting the component CATEGORY as componentId, not a numeric ID
+      // For now, let's pass it back correctly as the category
+      router.push(`/builder?firearmId=${firearmId}&component_category=${componentId}&selected_part_id=${productId}&isAssembly=${isAssembly}`);
     }
   }, [returnToBuilder, firearmId, componentId, isAssembly, router]);
 
@@ -36,6 +46,7 @@ export default function CatalogPage() {
         onSelectProduct={handleSelectProduct}
         selectedProductId={selectedProductId}
         returnToBuilder={returnToBuilder}
+        compatibility={compatibility || undefined}
       />
     </MainLayout>
   );

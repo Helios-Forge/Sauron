@@ -11,6 +11,7 @@ interface CatalogContentProps {
   onSelectProduct?: (productId: string) => void;
   selectedProductId?: string | null;
   returnToBuilder?: boolean;
+  compatibility?: string;
 }
 
 interface FilterState {
@@ -27,7 +28,8 @@ export default function CatalogContent({
   isAssembly,
   onSelectProduct,
   selectedProductId,
-  returnToBuilder = false
+  returnToBuilder = false,
+  compatibility
 }: CatalogContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,7 +38,7 @@ export default function CatalogContent({
     category: null,
     subcategories: [],
     manufacturers: [],
-    compatibilities: [],
+    compatibilities: compatibility ? [compatibility] : [],
     priceRange: [0, 1000],
     isAssembly
   });

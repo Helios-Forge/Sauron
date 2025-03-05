@@ -81,10 +81,45 @@ export default function ProductCatalog({
     
     // Filter by component type if specified
     if (componentFilter) {
-      filteredParts = filteredParts.filter(part => 
-        part.category?.toLowerCase().includes(componentFilter.toLowerCase()) ||
-        part.subcategory?.toLowerCase().includes(componentFilter.toLowerCase())
-      );
+      console.log(`Filtering by component: ${componentFilter}`);
+      
+      filteredParts = filteredParts.filter(part => {
+        // For exact category matches (preferred)
+        if (part.category === componentFilter || part.subcategory === componentFilter) {
+          return true;
+        }
+        
+        // For case-insensitive exact matches
+        if (part.category?.toLowerCase() === componentFilter.toLowerCase() || 
+            part.subcategory?.toLowerCase() === componentFilter.toLowerCase()) {
+          return true;
+        }
+        
+        // Special cases for components that need more flexible matching
+        const flexibleMatchCategories = ['grip', 'stock', 'magazine', 'optic'];
+        if (flexibleMatchCategories.includes(componentFilter.toLowerCase())) {
+          const isFlexMatch = 
+            (part.category?.toLowerCase().includes(componentFilter.toLowerCase()) && 
+             !part.category?.toLowerCase().includes('fore' + componentFilter.toLowerCase())) || 
+            (part.subcategory?.toLowerCase().includes(componentFilter.toLowerCase()) && 
+             !part.subcategory?.toLowerCase().includes('fore' + componentFilter.toLowerCase()));
+          
+          if (isFlexMatch) return true;
+        }
+        
+        // For word boundary matches (to prevent "Grip" matching "Foregrip")
+        // Split on spaces and hyphens to handle terms like "bolt-carrier-group"
+        const categoryWords = part.category?.toLowerCase().split(/[\s-]+/) || [];
+        const subcategoryWords = part.subcategory?.toLowerCase().split(/[\s-]+/) || [];
+        const filterWords = componentFilter.toLowerCase().split(/[\s-]+/);
+        
+        // Check if ALL filter words appear as EXACT words in the category or subcategory
+        return filterWords.every(filterWord => 
+          categoryWords.includes(filterWord) || subcategoryWords.includes(filterWord)
+        );
+      });
+      
+      console.log(`Found ${filteredParts.length} parts matching component filter: ${componentFilter}`);
     }
     
     // Filter by assembly status
@@ -96,16 +131,61 @@ export default function ProductCatalog({
     if (filters) {
       // Filter by category
       if (filters.category) {
-        filteredParts = filteredParts.filter(part => 
-          part.category === filters.category
-        );
+        const categoryFilter = filters.category; // Create a local non-null variable
+        filteredParts = filteredParts.filter(part => {
+          // Check if part directly matches the category
+          if (part.category === categoryFilter) {
+            return true;
+          }
+          
+          // If subcategories are selected, we'll handle category filtering along with subcategories
+          if (filters.subcategories && filters.subcategories.length > 0) {
+            return false; // Will be handled by subcategory filter
+          }
+          
+          // For parts that might be in subcategories, we need to check if they belong to any subcategory
+          // that might be a child of this category
+          // This is a simplification - ideally, we would have a more structured way to determine child categories
+          return (part.category && part.category.includes(categoryFilter)) || 
+                 (part.subcategory && part.subcategory.includes(categoryFilter));
+        });
       }
       
-      // Filter by subcategories
+      // Filter by subcategories - improved to handle hierarchical structure
       if (filters.subcategories && filters.subcategories.length > 0) {
-        filteredParts = filteredParts.filter(part => 
-          filters.subcategories.includes(part.subcategory || '')
-        );
+        filteredParts = filteredParts.filter(part => {
+          // Check if part directly matches any of the selected subcategories
+          if (filters.subcategories.some(subcat => 
+              part.subcategory === subcat ||
+              part.subcategory?.includes(subcat) ||
+              part.category === subcat ||
+              part.category?.includes(subcat))) {
+            return true;
+          }
+          
+          // Check for specific component cases that might not match directly
+          // For example, if "Gas System" is selected, we want to include "Gas Block", "Gas Tube", etc.
+          const partNameLower = part.name.toLowerCase();
+          return filters.subcategories.some(subcat => {
+            const subcatLower = subcat.toLowerCase();
+            // Check if the part name contains any keywords related to the subcategory
+            if (partNameLower.includes(subcatLower)) {
+              return true;
+            }
+            
+            // Handle specific mappings that aren't obvious
+            // Gas System should include gas tubes, gas blocks, etc.
+            if (subcatLower.includes('gas system') && 
+                (partNameLower.includes('gas tube') || 
+                 partNameLower.includes('gas block'))) {
+              return true;
+            }
+            
+            // Add more specific cases as needed
+            
+            return false;
+          });
+        });
       }
       
       // Filter by manufacturers
