@@ -75,8 +75,9 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Fetch firearm model and parts when component mounts
+  // Load firearm model data and parts when component mounts
   useEffect(() => {
+    console.log(`BuilderWorksheet mounted, loading data for firearmId: ${firearmId}`);
     loadFirearmModelAndParts();
   }, [firearmId]);
 
@@ -84,10 +85,11 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
   async function loadFirearmModelAndParts() {
     try {
       setLoading(true);
+      console.log(`Loading data for firearm ID: ${firearmId}`);
       
       // Fetch the specific firearm model
       const model = await getFirearmModelById(parseInt(firearmId));
-      console.log('Loaded firearm model:', model);
+      console.log('Loaded firearm model:', model?.name || 'No model found');
       
       if (!model) {
         setError(new Error(`Firearm model with ID ${firearmId} not found`));
@@ -100,13 +102,37 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       
       // Fetch all available parts
       const parts = await getParts();
+      console.log(`Loaded ${parts.length} available parts`);
       setAvailableParts(parts);
       
       // Fetch model categories using the new API (if available)
       try {
+        console.log(`Fetching categories for firearm model ID: ${firearmId}`);
         const categories = await getFirearmModelCategories(parseInt(firearmId));
-        setModelCategories(categories);
-        console.log('Loaded model categories:', categories);
+        console.log(`Loaded ${categories.length} model categories:`, categories);
+        
+        if (categories && categories.length > 0) {
+          setModelCategories(categories);
+          
+          // Print the category IDs for debugging
+          const categoryIds = categories.map(c => c.id).join(', ');
+          console.log(`Category IDs: ${categoryIds}`);
+          
+          // Log the top-level categories
+          const topLevel = categories.filter(c => !c.parent_category_id);
+          console.log(`Found ${topLevel.length} top-level categories:`, 
+            topLevel.map(c => `${c.name} (ID: ${c.id})`));
+            
+          // Log child categories
+          categories.forEach(cat => {
+            if (cat.parent_category_id) {
+              const parent = categories.find(c => c.id === cat.parent_category_id);
+              console.log(`Category "${cat.name}" (ID: ${cat.id}) is a child of "${parent?.name || 'Unknown'}" (ID: ${cat.parent_category_id})`);
+            }
+          });
+        } else {
+          console.warn('No categories returned for this firearm model');
+        }
       } catch (categoryError) {
         console.warn('Could not load model categories, falling back to legacy schema:', categoryError);
       }
@@ -118,20 +144,23 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         
         if (storedState) {
           console.log('Loading stored state for firearm', firearmId, storedState);
-          // Now that we have the model, build the component structure
-          await buildComponentStructure();
           
-          // Apply the stored selections based on component ID
-          applyStoredComponentSelections(storedState.components);
+          // Wait for component structure to be built before applying stored selections
+          setTimeout(() => {
+            applyStoredComponentSelections(storedState.components);
+            
+            // Apply stored expanded items state
+            if (storedState.expandedItems) {
+              setExpandedItems(storedState.expandedItems);
+            }
+            
+            updateBuildSummary(componentStructure);
+          }, 100);
         }
       } else {
         // No stored state, just build the basic component structure
-        // Make sure we have the model before building
-        console.log('No stored state, building component structure with model:', model);
-        await buildComponentStructure();
+        console.log('No stored state for this firearm');
       }
-      
-      updateBuildSummary(componentStructure);
     } catch (error) {
       console.error('Error loading data:', error);
       setError(error as Error);
@@ -140,16 +169,64 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     }
   }
 
-  // Build component structure when firearmModel or availableParts change
+  // Build component structure when firearmModel or modelCategories or availableParts change
   useEffect(() => {
     if (firearmModel && availableParts.length > 0) {
+      console.log(`Rebuilding component structure - model: ${firearmModel.name}, categories: ${modelCategories?.length || 0}, parts: ${availableParts.length}`);
       buildComponentStructure();
     }
-  }, [firearmModel, availableParts]);
+  }, [firearmModel, modelCategories, availableParts]);
+
+  // Trigger buildComponentStructure when all dependencies are loaded but no structure exists
+  useEffect(() => {
+    // Only run if we have the model, categories, and parts but no structure
+    if (
+      firearmModel && 
+      modelCategories && 
+      modelCategories.length > 0 && 
+      availableParts.length > 0 && 
+      componentStructure.length === 0
+    ) {
+      console.log('All data loaded but no structure exists - building component structure now');
+      buildComponentStructure();
+    }
+  }, [firearmModel, modelCategories, availableParts, componentStructure]);
+
+  // Enhanced debugging for component structure
+  useEffect(() => {
+    console.log(`Component structure updated with ${componentStructure.length} top-level components`);
+    if (componentStructure.length > 0) {
+      // Count total items including all sub-components
+      let totalItems = 0;
+      const countComponents = (items: ComponentItem[]) => {
+        totalItems += items.length;
+        items.forEach(item => {
+          if (item.subComponents?.length > 0) {
+            countComponents(item.subComponents);
+          }
+        });
+      };
+      countComponents(componentStructure);
+      console.log(`Total components in structure: ${totalItems}`);
+      
+      // Log structure for debugging
+      const logComponent = (item: ComponentItem, level = 0) => {
+        const indent = ' '.repeat(level * 2);
+        console.log(`${indent}Component: ${item.name} (ID: ${item.id}, Category ID: ${item.part_category_id || 'none'})`);
+        if (item.subComponents?.length > 0) {
+          console.log(`${indent}Children: ${item.subComponents.length}`);
+          item.subComponents.forEach(child => logComponent(child, level + 1));
+        }
+      };
+      
+      console.log('Component structure tree:');
+      componentStructure.forEach(item => logComponent(item));
+    }
+  }, [componentStructure]);
 
   // Build component structure based on the model requirements and available parts
   const buildComponentStructure = async () => {
-    console.log('Building component structure for model:', firearmModel);
+    console.log('Building component structure for model:', firearmModel?.name, `(ID: ${firearmModel?.id})`);
     
     if (!firearmModel) {
       console.warn('No model found, setting empty component structure');
@@ -158,12 +235,24 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     }
     
     const allParts = availableParts.slice();
+    console.log(`Processing ${allParts.length} available parts`);
+    
+    // Debug part category distribution
+    const partCategoryCounts: Record<number, number> = {};
+    allParts.forEach(part => {
+      if (part.part_category_id) {
+        partCategoryCounts[part.part_category_id] = (partCategoryCounts[part.part_category_id] || 0) + 1;
+      }
+    });
+    
+    console.log('Parts by category ID:', partCategoryCounts);
+    
     const components: ComponentItem[] = [];
     let nextComponentId = 1;
     
     // Check if we can use the new schema (part categories)
     if (modelCategories && modelCategories.length > 0) {
-      console.log('Using new schema with part categories:', modelCategories);
+      console.log(`Using new schema with ${modelCategories.length} part categories`);
       
       // Organize parts by category_id for easy lookup
       const partsByCategoryId: Record<number, Part[]> = {};
@@ -177,6 +266,13 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         }
       });
       
+      // Log categories with parts for debugging
+      Object.keys(partsByCategoryId).forEach(categoryId => {
+        const numId = parseInt(categoryId);
+        const category = modelCategories.find(c => c.id === numId);
+        console.log(`Category ID ${categoryId} (${category?.name || 'Unknown'}): ${partsByCategoryId[numId].length} parts`);
+      });
+      
       // Create a map of category IDs to their data for faster lookup
       const categoryMap: Record<number, PartCategory> = {};
       modelCategories.forEach(cat => {
@@ -185,10 +281,24 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       
       // Process top-level categories first (those with null parent_category_id)
       const topLevelCategories = modelCategories.filter(cat => !cat.parent_category_id);
+      console.log(`Found ${topLevelCategories.length} top-level categories:`, 
+        topLevelCategories.map(c => `${c.name} (ID: ${c.id})`));
       
+      if (topLevelCategories.length === 0) {
+        console.warn('No top-level categories found, cannot build structure');
+        setComponentStructure([]);
+        return;
+      }
+
       // Recursive function to build component structure with unlimited depth
       const buildCategoryTree = (category: PartCategory, parentId?: number): ComponentItem => {
         const isRequired = category.is_required || false;
+        
+        console.log(`Building tree for category: ${category.name} (ID: ${category.id}), required: ${isRequired}`);
+        
+        // Find parts that match this category ID
+        const matchingParts = allParts.filter(part => part.part_category_id === category.id);
+        console.log(`Found ${matchingParts.length} parts for category ${category.name} (ID: ${category.id})`);
         
         // Create component item for this category
         const component: ComponentItem = {
@@ -204,7 +314,7 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
           selectedPart: null,
           parentId,
           subComponents: [],
-          partData: {} as Part // Placeholder
+          partData: matchingParts[0] || {} as Part // Use first matching part if available
         };
         
         // Find all child categories and process them
@@ -213,7 +323,9 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         );
         
         if (childCategories.length > 0) {
-          console.log(`Category ${category.name} has child categories:`, childCategories.map(c => c.name));
+          console.log(`Category ${category.name} (ID: ${category.id}) has ${childCategories.length} child categories:`, 
+            childCategories.map(c => `${c.name} (ID: ${c.id})`));
+          
           // Process all children recursively
           component.subComponents = childCategories.map(child => 
             buildCategoryTree(child, component.id)
@@ -223,10 +335,16 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
         return component;
       };
       
-      // Build the complete tree
+      // Build the complete tree starting from each top-level category
       for (const topCategory of topLevelCategories) {
         components.push(buildCategoryTree(topCategory));
       }
+      
+      // Save the component structure
+      console.log(`Built component structure with ${components.length} top-level components`);
+      setComponentStructure(components);
+      // Initialize all top-level components as expanded
+      setExpandedItems(components.map(c => c.id));
     } 
     // Fallback to legacy schema
     else if (firearmModel.parts) {
@@ -643,80 +761,81 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Open part selection page
   const handleAddPart = (component: ComponentItem) => {
-    // Navigate to catalog with appropriate filters
-    console.log('handleAddPart called with component:', component);
+    // Preserve the state of componentId for when we return from catalog
+    console.log(`Adding part for component: ${component.name}, ID: ${component.id}, category ID: ${component.part_category_id}`);
     
-    const modelName = firearmModel?.name || "";
-    let componentCategory = component.name || component.category || "";
-    let categoryId: number | undefined = undefined;
-    
-    // If we have the new category structure, use that for precise filtering
-    if (component.part_category_id) {
-      categoryId = component.part_category_id;
-      console.log(`Using part_category_id ${categoryId} for filtering`);
-    }
-    // Legacy handling for string-based categories
-    else {
-      console.log(`Using legacy component category: ${componentCategory}`);
+    // Check if we should navigate to the catalog or not
+    if (component.selectedPart && (!component.partData || !component.partData.is_prebuilt)) {
+      console.log('User selected to replace an existing non-assembly part');
     }
     
-    console.log(`Navigating to catalog with component category: ${componentCategory}`);
-    
-    // For certain component categories, we want to include both regular parts and pre-built assemblies
-    // This allows parts like "Complete Lower Receiver" to show up in category filters like "Lower Receiver"
-    const includeAssemblies = ["Lower Receiver", "Upper Receiver"].includes(componentCategory);
-    
-    // Construct the URL with the query parameters needed for filtering in the catalog
+    // Create the query parameters for catalog page
     const queryParams = new URLSearchParams({
-      componentFilter: componentCategory,
-      isAssembly: includeAssemblies ? "true" : "false",
-      returnToBuilder: "true",
-      modelName,
-      firearmId: firearmId.toString(),
-      component_category: componentCategory
+      componentId: component.id.toString(),
+      isAssembly: 'false',
+      firearmId,
+      returnToBuilder: 'true'
     });
     
-    // Add category_id parameter if available (new schema)
-    if (categoryId !== undefined) {
-      queryParams.append("category_id", categoryId.toString());
+    // Add category ID if we have it
+    if (component.part_category_id) {
+      queryParams.set('categoryId', component.part_category_id.toString());
+      console.log(`Setting catalog category ID filter to: ${component.part_category_id}`);
+    } 
+    // Fallback to using component name (legacy)
+    else if (component.name) {
+      queryParams.set('component', component.name);
+      console.log(`Using legacy component name filter: ${component.name}`);
     }
     
-    router.push(`/catalog?${queryParams}`);
+    // Save current state before navigating away
+    saveBuilderState({
+      firearmId,
+      components: convertComponentItemsToStored(componentStructure),
+      expandedItems: expandedItems
+    });
+    
+    // Navigate to catalog with parameters
+    const catalogUrl = `/catalog?${queryParams.toString()}`;
+    console.log(`Navigating to catalog with parameters: ${catalogUrl}`);
+    router.push(catalogUrl);
   };
 
   // Open assembly selection page
   const handleAddAssembly = (component: ComponentItem) => {
-    // Navigate to catalog with appropriate filters for assemblies
-    console.log('handleAddAssembly called with component:', component);
+    // Preserve the state of componentId for when we return from catalog
+    console.log(`Adding assembly for component: ${component.name}, ID: ${component.id}, category ID: ${component.part_category_id}`);
     
-    const modelName = firearmModel?.name || "";
-    const componentCategory = component.name || component.category || "";
-    let categoryId: number | undefined = undefined;
-    
-    // If we have the new category structure, use that for precise filtering
-    if (component.part_category_id) {
-      categoryId = component.part_category_id;
-      console.log(`Using part_category_id ${categoryId} for filtering assemblies`);
-    }
-    
-    console.log(`Navigating to catalog with component category: ${componentCategory} (for assembly)`);
-    
-    // Construct the URL with query parameters for filtering
+    // Create the query parameters for catalog page
     const queryParams = new URLSearchParams({
-      componentFilter: componentCategory,
-      compatibility: modelName,
-      returnToBuilder: "true",
-      firearmId: firearmId,
-      component_category: componentCategory,
-      isAssembly: "true"
+      componentId: component.id.toString(),
+      isAssembly: 'true',
+      firearmId,
+      returnToBuilder: 'true'
     });
     
-    // Add category_id parameter if available (new schema)
-    if (categoryId !== undefined) {
-      queryParams.append("category_id", categoryId.toString());
+    // Add category ID if we have it
+    if (component.part_category_id) {
+      queryParams.set('categoryId', component.part_category_id.toString());
+      console.log(`Setting catalog category ID filter to: ${component.part_category_id}`);
+    } 
+    // Fallback to using component name (legacy)
+    else if (component.name) {
+      queryParams.set('component', component.name);
+      console.log(`Using legacy component name filter: ${component.name}`);
     }
     
-    router.push(`/catalog?${queryParams}`);
+    // Save current state before navigating away
+    saveBuilderState({
+      firearmId,
+      components: convertComponentItemsToStored(componentStructure),
+      expandedItems: expandedItems
+    });
+    
+    // Navigate to catalog with parameters
+    const catalogUrl = `/catalog?${queryParams.toString()}`;
+    console.log(`Navigating to catalog with parameters: ${catalogUrl}`);
+    router.push(catalogUrl);
   };
 
   // Add a function to check if a component is an assembly
@@ -778,68 +897,67 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     }));
   };
 
-  // Handle returning from catalog with selected part
+  // Check for selected part from catalog when returning
   useEffect(() => {
     if (!searchParams) return;
-    const selectedPartId = searchParams.get('selected_part_id');
-    const componentCategory = searchParams.get('component_category');
-    const isAssemblyParam = searchParams.get('isAssembly');
-    const categoryIdParam = searchParams.get('category_id');
     
-    if (selectedPartId) {
-      console.log(`Returning from catalog with part ID ${selectedPartId}`);
-      console.log(`Category info - name: ${componentCategory}, id: ${categoryIdParam}, isAssembly: ${isAssemblyParam}`);
+    const selectedPart = searchParams.get('selectedPart');
+    const componentId = searchParams.get('componentId');
+    const isAssembly = searchParams.get('isAssembly') === 'true';
+    
+    console.log(`Search params detected. Selected part: ${selectedPart}, Component ID: ${componentId}, Is Assembly: ${isAssembly}`);
+    
+    if (selectedPart && componentId) {
+      const componentIdNum = parseInt(componentId);
+      console.log(`Applying selected part ${selectedPart} for component ID ${componentIdNum}`);
       
-      // Find the right component by category or category ID
-      const findMatchingComponent = (items: ComponentItem[]): ComponentItem | null => {
-        for (const item of items) {
-          // First try to match by part_category_id (most precise)
-          if (categoryIdParam && item.part_category_id && item.part_category_id === parseInt(categoryIdParam)) {
-            console.log(`Found matching component by part_category_id: ${item.name} (ID: ${item.part_category_id})`);
-            return item;
+      // Find the part by ID
+      getPartById(parseInt(selectedPart))
+        .then(part => {
+          if (!part) {
+            console.error(`Part with ID ${selectedPart} not found`);
+            return;
           }
           
-          // Fall back to category name matching if needed
-          if (componentCategory && (item.name === componentCategory || item.category === componentCategory)) {
-            console.log(`Found matching component by name/category: ${item.name}`);
-            return item;
-          }
+          console.log(`Found part to apply:`, part);
           
-          // Recursively check subcomponents
-          if (item.subComponents && item.subComponents.length > 0) {
-            const found = findMatchingComponent(item.subComponents);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-      
-      const component = findMatchingComponent(componentStructure);
-      if (component) {
-        // Get the part details
-        getPartById(parseInt(selectedPartId)).then(part => {
-          if (part) {
-            console.log(`Found part:`, part);
-            
-            // If we have categoryIdParam, update the part's category_id if not already set
-            if (categoryIdParam && !part.part_category_id) {
-              console.log(`Setting part ${part.id} category_id to ${categoryIdParam}`);
-              part.part_category_id = parseInt(categoryIdParam);
+          // Find the component by ID and apply the selected part
+          const findComponentById = (items: ComponentItem[]): boolean => {
+            for (let i = 0; i < items.length; i++) {
+              const item = items[i];
+              
+              // Check if this is the component we're looking for
+              if (item.id === componentIdNum) {
+                console.log(`Found matching component by ID: ${item.name} (ID: ${item.id})`);
+                
+                if (isAssembly) {
+                  handleSelectAssembly(componentIdNum, part);
+                } else {
+                  handleSelectPart(componentIdNum, part);
+                }
+                
+                return true;
+              }
+              
+              // Check child components recursively
+              if (item.subComponents && item.subComponents.length > 0) {
+                if (findComponentById(item.subComponents)) {
+                  return true;
+                }
+              }
             }
             
-            // If isAssembly is true, use the assembly selection handling
-            if (isAssemblyParam === 'true') {
-              handleSelectAssembly(component.id, part);
-            } else {
-              handleSelectPart(component.id, part);
-            }
+            return false;
+          };
+          
+          // Start searching from the top-level components
+          if (!findComponentById(componentStructure)) {
+            console.error(`Component with ID ${componentId} not found in structure`);
           }
-        }).catch(err => {
-          console.error('Error fetching part details:', err);
+        })
+        .catch(error => {
+          console.error(`Error fetching part with ID ${selectedPart}:`, error);
         });
-      } else {
-        console.error(`No matching component found for category: ${componentCategory}, category_id: ${categoryIdParam}`);
-      }
     }
   }, [searchParams, componentStructure]);
 
@@ -880,20 +998,24 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Render loading state
   if (loading) {
-    return <div className="p-6 text-center">Loading build worksheet...</div>;
+    return (
+      <div className="p-6 min-h-[300px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading component data...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Render error state
+  // If error, show error state
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 dark:bg-red-900/10 dark:border-red-800 rounded-lg p-6 my-4">
-        <h3 className="text-red-800 dark:text-red-400 font-medium">Error Loading Build Worksheet</h3>
-        <p className="text-red-700 dark:text-red-300 text-sm mt-2">
-          {error.message || "Unable to load the firearm model and parts. Please try again later."}
-        </p>
+      <div className="p-6 text-center text-red-600 dark:text-red-400">
+        <p>Error loading component data: {error.message}</p>
         <button 
-          className="mt-3 px-4 py-2 text-sm bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
-          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={() => loadFirearmModelAndParts()}
         >
           Retry
         </button>
@@ -905,9 +1027,26 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
   if (!firearmModel) {
     return <div className="p-6 text-center">No firearm model found with ID {firearmId}</div>;
   }
+  
+  // Render empty component structure
+  if (!componentStructure || componentStructure.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="mb-4">No components found for this firearm model.</p>
+        <p className="text-xs text-gray-500">This may happen if the firearm model doesn't have any part categories defined.</p>
+      </div>
+    );
+  }
 
   // Render component rows recursively, with each component only shown once
   const renderComponentRows = (components: ComponentItem[], level = 0): ReactElement[] => {
+    if (!components || components.length === 0) {
+      if (level === 0) console.log('⚠️ No components to render in the main structure');
+      return [];
+    }
+
+    console.log(`Rendering ${components.length} components at level ${level}`);
+    
     return components.flatMap((component, index) => {
       const rows: ReactElement[] = [];
       const isComponentAnAssembly = isComponentAssembly(component);
@@ -917,15 +1056,21 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       const componentKey = `component-${component.id}-${level}-${index}`;
       
       // Check if there's an assembly option available for this component
-      const hasAssemblyOption = availableParts.some(part => 
-        part.part_category_id === component.part_category_id && 
-        part.is_prebuilt && 
-        isAssembly(part)
-      );
+      const hasAssemblyOption = component.part_category_id 
+        ? availableParts.some(part => 
+            part.part_category_id === component.part_category_id && 
+            part.is_prebuilt && 
+            isAssembly(part)
+          )
+        : availableParts.some(part => 
+            part.category === component.category && 
+            part.is_prebuilt && 
+            isAssembly(part)
+          );
       
       // Check if this component is fulfilled by a parent assembly
       const isFulfilledByAssembly = component.selectedPart && 
-                                    (component.selectedPart as any).fulfilled_by_assembly === true;
+                                   (component.selectedPart as any).fulfilled_by_assembly === true;
       
       // Main component row
       rows.push(
@@ -1036,8 +1181,8 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   return (
     <div className="p-6">
-      <table className="min-w-full border-collapse">
-        <thead className="bg-gray-100 dark:bg-gray-700">
+      <table className="min-w-full border-collapse bg-white dark:bg-gray-900 shadow-sm rounded-lg overflow-hidden">
+        <thead className="bg-gray-100 dark:bg-gray-800">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Component</th>
             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
@@ -1047,9 +1192,16 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody>
-          {/* Render component rows recursively, with each component only shown once */}
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
           {renderComponentRows(componentStructure)}
+          {componentStructure.length > 0 && renderComponentRows(componentStructure).length === 0 && (
+            <tr>
+              <td colSpan={6} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                <p>No renderable components found.</p>
+                <p className="text-xs mt-2">Check console logs for details.</p>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
