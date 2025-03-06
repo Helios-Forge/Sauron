@@ -34,11 +34,14 @@ type FirearmModel struct {
 	// Specifications of the firearm
 	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"weight\": \"6.5 lbs\", \"caliber\": \"5.56x45mm NATO\"}"`
 
-	// Hierarchical structure of parts with required/optional designation
+	// Hierarchical structure of parts with required/optional designation (deprecated - to be removed after migration)
 	Parts datatypes.JSON `json:"parts" gorm:"type:jsonb;not null" swaggertype:"string" example:"{\"Upper Assembly\": {\"type\": \"required\", \"sub_parts\": {\"Bolt Carrier Group\": {\"type\": \"required\"}}}}"`
 
-	// List of parts that are compatible but not part of the basic structure
+	// List of parts that are compatible but not part of the basic structure (deprecated - to be removed after migration)
 	CompatibleParts datatypes.JSON `json:"compatible_parts" gorm:"type:jsonb" swaggertype:"string" example:"{\"Magazines and Feeding Devices\": {\"Detachable Box Magazine\": \"optional\"}}"`
+
+	// Related part categories through FirearmModelPartCategory
+	PartCategories []PartCategory `json:"part_categories,omitempty" gorm:"many2many:firearm_model_part_categories"`
 
 	// Image URLs for the firearm model
 	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/images/firearms/AR-15.jpg\"]"`

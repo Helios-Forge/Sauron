@@ -26,6 +26,12 @@ func SetupRouter() *gin.Engine {
 	router.PUT("/firearm-models/:id", handlers.UpdateFirearmModel)
 	router.DELETE("/firearm-models/:id", handlers.DeleteFirearmModel)
 
+	// NEW: Firearm Model Part Categories
+	router.GET("/firearm-models/:id/categories", handlers.GetFirearmModelCategories)
+	router.POST("/firearm-models/:id/categories/:category_id", handlers.AddCategoryToFirearmModel)
+	router.PUT("/firearm-models/:id/categories/:category_id", handlers.UpdateFirearmModelCategoryRelation)
+	router.DELETE("/firearm-models/:id/categories/:category_id", handlers.RemoveCategoryFromFirearmModel)
+
 	// Parts
 	router.GET("/parts", handlers.GetParts)
 	router.POST("/parts", handlers.CreatePart)
@@ -35,12 +41,19 @@ func SetupRouter() *gin.Engine {
 	router.GET("/parts/category/:category", handlers.GetPartsByCategory)
 	router.GET("/parts/:id/compatible", handlers.GetCompatibleParts)
 
-	// Part metadata endpoints
-	router.GET("/part-categories", handlers.GetPartCategories)
+	// Legacy Part metadata endpoints (will be deprecated)
+	router.GET("/legacy/part-categories", handlers.GetLegacyPartCategories)
 	router.GET("/part-subcategories", handlers.GetPartSubcategories)
 	router.GET("/part-subcategories/:category", handlers.GetSubcategoriesByCategory)
 	router.GET("/compatible-models", handlers.GetCompatibleFirearmModels)
 	router.GET("/part-hierarchy", handlers.GetPartHierarchy)
+
+	// NEW: Part Categories (new schema)
+	router.GET("/part-categories", handlers.GetPartCategories)
+	router.GET("/part-categories/:id", handlers.GetPartCategoryByID)
+	router.POST("/part-categories", handlers.CreatePartCategory)
+	router.PUT("/part-categories/:id", handlers.UpdatePartCategory)
+	router.DELETE("/part-categories/:id", handlers.DeletePartCategory)
 
 	// Compatibility Rules - Removed as per new schema design
 	// These routes are no longer needed as compatibility information is now embedded in the models

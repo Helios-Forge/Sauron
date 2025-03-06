@@ -22,11 +22,15 @@ type Part struct {
 	ManufacturerID int          `json:"manufacturer_id" gorm:"index" example:"1"`
 	Manufacturer   Manufacturer `json:"-" gorm:"foreignKey:ManufacturerID"`
 
-	// Main category of the part
+	// Main category of the part (deprecated - to be removed after migration)
 	Category string `json:"category" gorm:"size:100" example:"Magazines"`
 
-	// Subcategory for more specific classification
+	// Subcategory for more specific classification (deprecated - to be removed after migration)
 	Subcategory string `json:"subcategory" gorm:"size:100" example:"Polymer Magazines"`
+
+	// Reference to the part category
+	PartCategoryID *int          `json:"part_category_id,omitempty" gorm:"index" example:"18"`
+	PartCategory   *PartCategory `json:"part_category,omitempty" gorm:"foreignKey:PartCategoryID"`
 
 	// Whether this is a pre-built component
 	IsPrebuilt bool `json:"is_prebuilt" gorm:"default:false" example:"false"`
@@ -34,7 +38,7 @@ type Part struct {
 	// SubComponents that make up this part (for prebuilt parts)
 	SubComponents datatypes.JSON `json:"sub_components" gorm:"type:jsonb" swaggertype:"string" example:"[{\"name\": \"Charging Handle Latch\", \"type\": \"required\"}, {\"name\": \"Charging Handle Spring\", \"type\": \"required\"}]"`
 
-	// List of compatible firearm models with attachment points and requirement flags
+	// List of compatible firearm models with attachment points and requirement flags (to be simplified after migration)
 	CompatibleModels datatypes.JSON `json:"compatible_models" gorm:"type:jsonb" swaggertype:"string" example:"[{\"model\": \"AR-15\", \"attachment_point\": \"Upper Receiver\", \"is_required\": false}]"`
 
 	// Requirements for compatibility - parts this component depends on

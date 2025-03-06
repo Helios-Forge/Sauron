@@ -3,10 +3,8 @@ package db
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"sauron-backend/internal/models"
-	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,10 +33,13 @@ func ConnectDB() {
 	log.Println("Starting database migration...")
 
 	// Migrate all tables
+	// Note the order is important for foreign key constraints
 	err = DB.AutoMigrate(
 		&models.Manufacturer{},
 		&models.Seller{},
+		&models.PartCategory{}, // Migrate part categories first
 		&models.FirearmModel{},
+		&models.FirearmModelPartCategory{}, // Then the relationship table
 		&models.Part{},
 		&models.PartSellerLink{},
 		&models.PrebuiltFirearm{},
@@ -49,6 +50,36 @@ func ConnectDB() {
 	if err != nil {
 		log.Fatal("Failed to migrate tables:", err)
 	}
+
+	// Add unique constraint for firearm_model_part_categories table
+	// This can't be done in the model definition because GORM doesn't support composite unique constraints directly
+	err = DB.Exec("ALTER TABLE firearm_model_part_categories ADD CONSTRAINT unique_model_category UNIQUE (firearm_model_id, part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to add unique constraint to firearm_model_part_categories. It may already exist:", err)
+	}
+
+	// Add additional indexes
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_part_categories_parent ON part_categories (parent_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_part_categories_parent:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_model ON firearm_model_part_categories (firearm_model_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_firearm_model_part_categories_model:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_category ON firearm_model_part_categories (part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_firearm_model_part_categories_category:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_parts_category ON parts (part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_parts_category:", err)
+	}
+
+	log.Println("Database migration completed successfully")
 
 	log.Println("Database connection established for read-only operations")
 }
@@ -70,32 +101,18 @@ func InitDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// Check if tables exist and get their state
-	hasExistingData := hasExistingData()
-
 	// Auto Migrate the schemas
 	log.Println("Starting database migration...")
 
-	// First, migrate the base models
+	// Migrate all tables
+	// Note the order is important for foreign key constraints
 	err = DB.AutoMigrate(
 		&models.Manufacturer{},
 		&models.Seller{},
-	)
-	if err != nil {
-		log.Fatal("Failed to migrate manufacturer and seller tables:", err)
-	}
-
-	// Then migrate the models that depend on manufacturers
-	err = DB.AutoMigrate(
+		&models.PartCategory{}, // Migrate part categories first
 		&models.FirearmModel{},
+		&models.FirearmModelPartCategory{}, // Then the relationship table
 		&models.Part{},
-	)
-	if err != nil {
-		log.Fatal("Failed to migrate firearm model and part tables:", err)
-	}
-
-	// Finally migrate the rest of the models
-	err = DB.AutoMigrate(
 		&models.PartSellerLink{},
 		&models.PrebuiltFirearm{},
 		&models.PrebuiltSellerLink{},
@@ -103,17 +120,38 @@ func InitDB() {
 		&models.ProductListing{},
 	)
 	if err != nil {
-		log.Fatal("Failed to migrate remaining tables:", err)
+		log.Fatal("Failed to migrate tables:", err)
 	}
 
-	// If there was existing data, we need to update it to match the new schema
-	if hasExistingData {
-		log.Println("Updating existing data to match new schema...")
-		updateExistingData()
+	// Add unique constraint for firearm_model_part_categories table
+	// This can't be done in the model definition because GORM doesn't support composite unique constraints directly
+	err = DB.Exec("ALTER TABLE firearm_model_part_categories ADD CONSTRAINT IF NOT EXISTS unique_model_category UNIQUE (firearm_model_id, part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to add unique constraint to firearm_model_part_categories. It may already exist:", err)
 	}
 
-	// Initialize random seed
-	rand.Seed(time.Now().UnixNano())
+	// Add additional indexes
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_part_categories_parent ON part_categories (parent_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_part_categories_parent:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_model ON firearm_model_part_categories (firearm_model_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_firearm_model_part_categories_model:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_category ON firearm_model_part_categories (part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_firearm_model_part_categories_category:", err)
+	}
+
+	err = DB.Exec("CREATE INDEX IF NOT EXISTS idx_parts_category ON parts (part_category_id)").Error
+	if err != nil {
+		log.Println("Warning: Failed to create index idx_parts_category:", err)
+	}
+
+	log.Println("Database migration completed successfully")
 
 	// Check if database is empty and needs seeding
 	var count int64
@@ -122,10 +160,65 @@ func InitDB() {
 		log.Println("Empty database detected, starting data seeding...")
 		SeedDatabase()
 	} else {
-		log.Println("Database already contains data, skipping seeding")
+		log.Println("Database already contains data, skipping basic seeding")
 	}
 
+	// Always run the schema migration process
+	// This will populate the new schema tables and migrate existing data
+	MigrateSchema()
+
 	log.Println("Database connection established and ready")
+}
+
+// MigrateSchema handles the migration of data from the old schema to the new relational schema
+// This includes populating part categories and creating relationships between tables
+func MigrateSchema() {
+	log.Println("Running schema migration for categories and relationships...")
+
+	// Check if we have any part categories already
+	var categoryCount int64
+	DB.Model(&models.PartCategory{}).Count(&categoryCount)
+
+	if categoryCount == 0 {
+		log.Println("No part categories found - initializing category data...")
+		SeedCategoriesAndRelationships()
+	} else {
+		log.Printf("Found %d existing part categories, checking for unmigrated data...", categoryCount)
+
+		// Check if we have any unmigrated parts
+		var unmappedPartsCount int64
+		DB.Model(&models.Part{}).Where("part_category_id IS NULL").Count(&unmappedPartsCount)
+
+		if unmappedPartsCount > 0 {
+			log.Printf("Found %d parts without category mapping - migrating...", unmappedPartsCount)
+
+			var unmappedParts []models.Part
+			DB.Where("part_category_id IS NULL").Find(&unmappedParts)
+
+			for _, part := range unmappedParts {
+				MigratePartCategory(part)
+			}
+		}
+
+		// Check if we have any firearm models that need relationship migration
+		var firearmModels []models.FirearmModel
+		DB.Find(&firearmModels)
+
+		for _, model := range firearmModels {
+			// Check if this model has any category relationships
+			var relationCount int64
+			DB.Model(&models.FirearmModelPartCategory{}).
+				Where("firearm_model_id = ?", model.ID).
+				Count(&relationCount)
+
+			if relationCount == 0 {
+				log.Printf("Migrating categories for firearm model: %s (ID: %d)", model.Name, model.ID)
+				MigrateFirearmModelCategories(model)
+			}
+		}
+	}
+
+	log.Println("Schema migration completed")
 }
 
 // Check if there's existing data in the database

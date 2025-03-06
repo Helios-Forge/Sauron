@@ -7,15 +7,57 @@ import (
 	"sauron-backend/internal/db"
 	"sauron-backend/internal/models"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Get all parts
+// @Summary Get all parts
+// @Description Get all parts with optional filtering by category, subcategory, or category_id
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param category query string false "Filter by category name"
+// @Param subcategory query string false "Filter by subcategory name"
+// @Param category_id query int false "Filter by part category ID (new schema)"
+// @Param is_prebuilt query bool false "Filter by prebuilt status"
+// @Success 200 {array} models.Part
+// @Router /parts [get]
 func GetParts(c *gin.Context) {
 	var parts []models.Part
-	db.DB.Find(&parts)
+
+	// Build query with filters
+	query := db.DB
+
+	// Filter by category (legacy)
+	if category := c.Query("category"); category != "" {
+		query = query.Where("category = ?", category)
+	}
+
+	// Filter by subcategory (legacy)
+	if subcategory := c.Query("subcategory"); subcategory != "" {
+		query = query.Where("subcategory = ?", subcategory)
+	}
+
+	// Filter by part_category_id (new schema)
+	if categoryIDStr := c.Query("category_id"); categoryIDStr != "" {
+		categoryID, err := strconv.Atoi(categoryIDStr)
+		if err == nil {
+			query = query.Where("part_category_id = ?", categoryID)
+		}
+	}
+
+	// Filter by is_prebuilt
+	if isPrebuiltStr := c.Query("is_prebuilt"); isPrebuiltStr != "" {
+		isPrebuilt := isPrebuiltStr == "true"
+		query = query.Where("is_prebuilt = ?", isPrebuilt)
+	}
+
+	// Execute query
+	query.Find(&parts)
+
 	c.JSON(http.StatusOK, parts)
 }
 
@@ -102,7 +144,9 @@ func GetCompatibleParts(c *gin.Context) {
 }
 
 // Get all unique part categories
-func GetPartCategories(c *gin.Context) {
+// This is the legacy function that returns string categories
+// @deprecated Use GetPartCategories from part_category_handlers.go instead
+func GetLegacyPartCategories(c *gin.Context) {
 	var categories []string
 	db.DB.Model(&models.Part{}).Distinct().Pluck("category", &categories)
 
