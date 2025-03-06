@@ -19,7 +19,7 @@ import {
   saveBuilderState, 
   loadBuilderState, 
   hasStoredStateForFirearm, 
-  BuilderState, 
+  BuilderState,
   ComponentState,
   updateStoredComponent
 } from '@/lib/builderStorage';
@@ -619,12 +619,28 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     console.log('handleAddPart called with component:', component);
     
     const modelName = firearmModel?.name || "";
-    const componentCategory = component.category || "";
+    let componentCategory = component.category || "";
+    
+    // Special handling for Lower Assembly components
+    // If we're looking at a Lower Assembly component, we want to find parts that match both
+    // the category and subcategory for better filtering
+    if (componentCategory === "Lower Assembly" && component.subcategory) {
+      // For Lower Assembly, we need to be more specific to find specific parts like Complete Lower Receiver
+      componentCategory = component.subcategory;
+      console.log(`Using subcategory ${componentCategory} for Lower Assembly component`);
+    }
     
     console.log(`Navigating to catalog with component category: ${componentCategory}`);
     
+    // For certain component categories, we want to include both regular parts and pre-built assemblies
+    // This allows parts like "Complete Lower Receiver" to show up in category filters like "Lower Receiver"
+    const includeAssemblies = ["Lower Receiver", "Upper Receiver"].includes(componentCategory);
+    
+    // If this is a category that should include prebuilt parts, don't filter by isAssembly
+    const assemblyParam = includeAssemblies ? "" : "&isAssembly=false";
+    
     // Construct the URL with query parameters for filtering
-    router.push(`/catalog?component=${encodeURIComponent(componentCategory)}&compatibility=${encodeURIComponent(modelName)}&returnToBuilder=true&firearmId=${firearmId}&component_category=${encodeURIComponent(componentCategory)}&isAssembly=false`);
+    router.push(`/catalog?component=${encodeURIComponent(componentCategory)}&compatibility=${encodeURIComponent(modelName)}&returnToBuilder=true&firearmId=${firearmId}&component_category=${encodeURIComponent(componentCategory)}${assemblyParam}`);
   };
 
   // Open assembly selection page
@@ -707,7 +723,8 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     // Using new parameter names for clarity
     const componentCategory = searchParams.get('component_category');
     const selectedPartId = searchParams.get('selected_part_id');
-    const isAssemblyParam = searchParams.get('isAssembly') === 'true';
+    const isAssemblyParamStr = searchParams.get('isAssembly');
+    const isAssemblyParam = isAssemblyParamStr !== null ? isAssemblyParamStr === 'true' : undefined;
     
     console.log('Raw URL Parameters:', { 
       componentCategory, 
@@ -767,12 +784,24 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
             console.log(`Successfully fetched part:`, part);
             
             // Apply the selection to the component
-            if (isAssemblyParam && isAssembly(part)) {
-              console.log(`Selecting as assembly for component ${matchingComponent.id}`);
-              handleSelectAssembly(matchingComponent.id, part);
+            if (isAssemblyParam !== undefined) {
+              // If isAssemblyParam is specified, use it to determine if we should add as assembly
+              if (isAssemblyParam && isAssembly(part)) {
+                console.log(`Selecting as assembly for component ${matchingComponent.id}`);
+                handleSelectAssembly(matchingComponent.id, part);
+              } else {
+                console.log(`Selecting as regular part for component ${matchingComponent.id}`);
+                handleSelectPart(matchingComponent.id, part);
+              }
             } else {
-              console.log(`Selecting as regular part for component ${matchingComponent.id}`);
-              handleSelectPart(matchingComponent.id, part);
+              // If isAssemblyParam is not specified, determine based on the part properties
+              if (isAssembly(part)) {
+                console.log(`Auto-selecting as assembly for component ${matchingComponent.id} based on part properties`);
+                handleSelectAssembly(matchingComponent.id, part);
+              } else {
+                console.log(`Auto-selecting as regular part for component ${matchingComponent.id} based on part properties`);
+                handleSelectPart(matchingComponent.id, part);
+              }
             }
           } else {
             console.error(`Part with ID ${partId} not found`);
@@ -950,87 +979,9 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-          Build Worksheet
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Select components to build your custom {firearmModel.name}
-        </p>
-      </div>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm uppercase">
-            <tr>
-              <th className="px-4 py-3 text-left">Component</th>
-              <th className="px-4 py-3 text-center">Required</th>
-              <th className="px-4 py-3 text-left">Selected Part</th>
-              <th className="px-4 py-3 text-right">Price</th>
-              <th className="px-4 py-3 text-center">Compatibility</th>
-              <th className="px-4 py-3 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {renderComponentRows(componentStructure)}
-          </tbody>
-        </table>
-      </div>
-      
-      <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <div className="flex justify-between items-center">
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Build Progress
-            </h4>
-            <p className="text-gray-900 dark:text-white text-lg font-semibold">
-              {componentStructure.filter(c => c.selectedPart).length} of {componentStructure.filter(c => c.isRequired).length} required components selected
-            </p>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 text-right">
-              Estimated Price
-            </h4>
-            <p className="text-gray-900 dark:text-white text-lg font-semibold">
-              ${totalPrice.toFixed(2)}
-            </p>
-          </div>
-        </div>
-        
-        <div className={`mt-4 p-3 rounded-md ${
-          compatibility === 'compatible' 
-            ? 'bg-green-50 dark:bg-green-900/10 text-green-800 dark:text-green-400'
-            : compatibility === 'warning'
-              ? 'bg-yellow-50 dark:bg-yellow-900/10 text-yellow-800 dark:text-yellow-400'
-              : 'bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-400'
-        }`}>
-          <div className="flex items-center">
-            <svg 
-              className="w-5 h-5 mr-2" 
-              fill="currentColor" 
-              viewBox="0 0 20 20" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {compatibility === 'compatible' ? (
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
-              ) : compatibility === 'warning' ? (
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
-              ) : (
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
-              )}
-            </svg>
-            <span className="font-medium">
-              {compatibility === 'compatible' 
-                ? 'All components are compatible' 
-                : compatibility === 'warning'
-                  ? 'Missing required components'
-                  : 'Incompatible components detected'}
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="p-6 text-center">
+      {/* Render component rows recursively, with each component only shown once */}
+      {renderComponentRows(componentStructure)}
     </div>
   );
-} 
+}

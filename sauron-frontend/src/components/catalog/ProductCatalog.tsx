@@ -84,8 +84,23 @@ export default function ProductCatalog({
       console.log(`Filtering by component: ${componentFilter}`);
       
       filteredParts = filteredParts.filter(part => {
-        // For exact category matches (preferred)
+        // For exact category or subcategory matches (preferred)
         if (part.category === componentFilter || part.subcategory === componentFilter) {
+          return true;
+        }
+        
+        // Handle mismatched category/subcategory
+        // In the case of "Lower Receiver" as componentFilter but "Lower Assembly"/"Lower Receiver" as category/subcategory
+        if (componentFilter === "Lower Receiver" && (
+            (part.category === "Lower Assembly" && part.subcategory === "Lower Receiver") ||
+            (part.category === "Lower Receiver" && part.subcategory?.includes("Lower"))
+        )) {
+          return true;
+        }
+
+        // Check if part name contains the component filter
+        // This helps with "Complete Lower Receiver" when looking for "Lower Receiver"
+        if (part.name.toLowerCase().includes(componentFilter.toLowerCase())) {
           return true;
         }
         
@@ -96,13 +111,15 @@ export default function ProductCatalog({
         }
         
         // Special cases for components that need more flexible matching
-        const flexibleMatchCategories = ['grip', 'stock', 'magazine', 'optic'];
-        if (flexibleMatchCategories.includes(componentFilter.toLowerCase())) {
+        const flexibleMatchCategories = ['grip', 'stock', 'magazine', 'optic', 'receiver', 'lower receiver', 'upper receiver'];
+        if (flexibleMatchCategories.some(cat => componentFilter.toLowerCase().includes(cat))) {
           const isFlexMatch = 
             (part.category?.toLowerCase().includes(componentFilter.toLowerCase()) && 
              !part.category?.toLowerCase().includes('fore' + componentFilter.toLowerCase())) || 
             (part.subcategory?.toLowerCase().includes(componentFilter.toLowerCase()) && 
-             !part.subcategory?.toLowerCase().includes('fore' + componentFilter.toLowerCase()));
+             !part.subcategory?.toLowerCase().includes('fore' + componentFilter.toLowerCase())) ||
+            (componentFilter.toLowerCase().includes('receiver') && 
+             part.name.toLowerCase().includes(componentFilter.toLowerCase()));
           
           if (isFlexMatch) return true;
         }

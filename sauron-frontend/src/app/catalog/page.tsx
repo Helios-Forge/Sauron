@@ -11,7 +11,8 @@ export default function CatalogPage() {
   
   // Get URL parameters
   const componentId = searchParams.get('component');
-  const isAssembly = searchParams.get('isAssembly') === 'true';
+  const isAssemblyParam = searchParams.get('isAssembly');
+  const isAssembly = isAssemblyParam !== null ? isAssemblyParam === 'true' : undefined;
   const firearmId = searchParams.get('firearmId');
   const returnToBuilder = searchParams.get('returnToBuilder') === 'true';
   const compatibility = searchParams.get('compatibility');
@@ -34,7 +35,8 @@ export default function CatalogPage() {
       
       // We're getting the component CATEGORY as componentId, not a numeric ID
       // For now, let's pass it back correctly as the category
-      router.push(`/builder?firearmId=${firearmId}&component_category=${componentId}&selected_part_id=${productId}&isAssembly=${isAssembly}`);
+      const isAssemblyParam = isAssembly !== undefined ? `&isAssembly=${isAssembly}` : '';
+      router.push(`/builder?firearmId=${firearmId}&component_category=${componentId}&selected_part_id=${productId}${isAssemblyParam}`);
     }
   }, [returnToBuilder, firearmId, componentId, isAssembly, router]);
 
