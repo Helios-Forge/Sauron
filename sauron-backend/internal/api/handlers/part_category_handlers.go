@@ -26,7 +26,8 @@ func GetPartCategories(c *gin.Context) {
 
 	// Load parent-child relationships recursively if requested
 	if recursive {
-		query = query.Preload("ChildCategories")
+		// Preload multiple levels deep for true recursion
+		query = query.Preload("ChildCategories.ChildCategories.ChildCategories")
 	}
 
 	// Get only top-level categories when recursive, otherwise get all
