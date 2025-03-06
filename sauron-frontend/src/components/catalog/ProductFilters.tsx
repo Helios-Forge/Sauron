@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   useCategoriesAndSubcategories, 
   useManufacturers, 
   useCompatibleFirearmModels,
   usePartHierarchy,
   PartHierarchyItem,
-  Manufacturer
+  Manufacturer,
+  PartCategory
 } from '@/lib/api';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -18,15 +19,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import React from 'react';
 
 interface ProductFiltersProps {
   initialComponent?: string;
+  initialFilters?: FilterState;
   isAssembly?: boolean;
   onFilterChange?: (filters: FilterState) => void;
+  setIsFiltering?: (isFiltering: boolean) => void;
 }
 
 interface FilterState {
-  category: string | null;
+  // This now only contains category IDs
   subcategories: string[];
   manufacturers: string[];
   compatibilities: string[];
@@ -47,35 +51,265 @@ const componentCategoryMap: Record<string, { category: string, subcategory: stri
   'optics': { category: 'Optics', subcategory: 'Optics' },
 };
 
-export default function ProductFilters({ initialComponent, isAssembly, onFilterChange }: ProductFiltersProps) {
+// Create a separate CategoryCheckbox component to prevent re-rendering issues
+interface CategoryCheckboxProps {
+  category: string;
+  displayName: string;
+  isSelected: boolean;
+  onChange: (category: string, isChecked: boolean) => void;
+}
+
+// This is a pure component that won't re-render unless its specific props change
+const CategoryCheckbox = React.memo(({ category, displayName, isSelected, onChange }: CategoryCheckboxProps) => {
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={`category-${category}`}
+        checked={isSelected}
+        onCheckedChange={(checked) => onChange(category, checked === true)}
+      />
+      <Label
+        htmlFor={`category-${category}`}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {displayName}
+      </Label>
+    </div>
+  );
+});
+
+// Create subcategory checkbox component
+interface SubcategoryCheckboxProps {
+  subcategory: string;
+  displayName: string;
+  isSelected: boolean;
+  onChange: (subcategory: string, isChecked: boolean) => void;
+}
+
+const SubcategoryCheckbox = React.memo(({ subcategory, displayName, isSelected, onChange }: SubcategoryCheckboxProps) => {
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={`subcategory-${subcategory}`}
+        checked={isSelected}
+        onCheckedChange={(checked) => onChange(subcategory, checked === true)}
+      />
+      <Label
+        htmlFor={`subcategory-${subcategory}`}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {displayName}
+      </Label>
+    </div>
+  );
+});
+
+// Create manufacturer checkbox component 
+interface ManufacturerCheckboxProps {
+  manufacturer: { id: number; name: string };
+  isSelected: boolean;
+  onChange: (manufacturerId: string, isChecked: boolean) => void;
+}
+
+const ManufacturerCheckbox = React.memo(({ manufacturer, isSelected, onChange }: ManufacturerCheckboxProps) => {
+  // Memoize the onCheckedChange handler
+  const handleCheckedChange = useCallback((checked: boolean) => {
+    onChange(manufacturer.id.toString(), checked === true);
+  }, [manufacturer.id, onChange]);
+  
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={`manufacturer-${manufacturer.id}`}
+        checked={isSelected}
+        onCheckedChange={handleCheckedChange}
+      />
+      <Label
+        htmlFor={`manufacturer-${manufacturer.id}`}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {manufacturer.name}
+      </Label>
+    </div>
+  );
+});
+
+// Create assembly checkbox component
+interface AssemblyCheckboxProps {
+  isSelected: boolean;
+  onChange: (isChecked: boolean) => void;
+}
+
+const AssemblyCheckbox = React.memo(({ isSelected, onChange }: AssemblyCheckboxProps) => {
+  // Memoize the onCheckedChange handler
+  const handleCheckedChange = useCallback((checked: boolean) => {
+    onChange(checked === true);
+  }, [onChange]);
+  
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id="is-assembly"
+        checked={isSelected}
+        onCheckedChange={handleCheckedChange}
+      />
+      <Label
+        htmlFor="is-assembly"
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        Show Assemblies
+      </Label>
+    </div>
+  );
+});
+
+// Create a hierarchical category component with collapsible nesting
+interface CategoryTreeProps {
+  categories: PartCategory[];
+  selectedCategories: string[];
+  onCategoryChange: (category: string, isChecked: boolean) => void;
+}
+
+const CategoryTree = React.memo(({ 
+  categories, 
+  selectedCategories, 
+  onCategoryChange,
+}: CategoryTreeProps) => {
+  // Memoize the onCheckedChange handlers for each category
+  const getCheckedChangeHandler = useCallback((categoryId: string) => {
+    return (checked: boolean) => onCategoryChange(categoryId, checked === true);
+  }, [onCategoryChange]);
+  
+  // Default to empty array if categories is undefined
+  const categoriesToRender = categories || [];
+  
+  return (
+    <div className="space-y-1">
+      {categoriesToRender.map((category) => {
+        // Check if this category has children
+        const hasChildren = category.child_categories && category.child_categories.length > 0;
+        
+        // Memoize the handler for this specific category
+        const handleCheckedChange = useMemo(() => 
+          getCheckedChangeHandler(category.id.toString()),
+        [getCheckedChangeHandler, category.id]);
+        
+        return (
+          <div key={category.id} className="rounded-sm">
+            {hasChildren ? (
+              <Accordion type="single" collapsible defaultValue={category.id.toString()} className="border-none">
+                <AccordionItem value={category.id.toString()} className="border-b-0 mb-1">
+                  <div className="flex items-center">
+                    <Checkbox
+                      id={`category-${category.id}`}
+                      checked={selectedCategories.includes(category.id.toString())}
+                      onCheckedChange={handleCheckedChange}
+                      className="mr-2"
+                    />
+                    <AccordionTrigger className="py-1 hover:no-underline flex-1">
+                      <span className="text-sm font-medium text-left">{category.name}</span>
+                    </AccordionTrigger>
+                  </div>
+                  <AccordionContent className="pl-6 pt-1 pb-0">
+                    <CategoryTree
+                      categories={category.child_categories || []}
+                      selectedCategories={selectedCategories}
+                      onCategoryChange={onCategoryChange}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : (
+              <div className="flex items-center py-1 pl-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-sm transition-colors">
+                <Checkbox
+                  id={`category-${category.id}`}
+                  checked={selectedCategories.includes(category.id.toString())}
+                  onCheckedChange={handleCheckedChange}
+                  className="mr-2"
+                />
+                <Label
+                  htmlFor={`category-${category.id}`}
+                  className="text-sm font-medium cursor-pointer w-full"
+                >
+                  {category.name}
+                </Label>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
+export default function ProductFilters({ 
+  initialComponent, 
+  initialFilters,
+  isAssembly, 
+  onFilterChange,
+  setIsFiltering
+}: ProductFiltersProps) {
   // Fetch data from API
-  const { categories, subcategories, loading: categoriesLoading } = useCategoriesAndSubcategories();
+  const { categoryHierarchy, flatCategories, loading: categoriesLoading } = useCategoriesAndSubcategories();
   const { manufacturers, loading: manufacturersLoading } = useManufacturers();
   const { models: compatibilities, loading: compatibilitiesLoading } = useCompatibleFirearmModels();
   const { hierarchy: partHierarchy, loading: hierarchyLoading } = usePartHierarchy();
 
-  // State for selected filters
+  // Add this ref at the top level of the component
+  const prevFiltersRef = useRef<FilterState | null>(null);
+
+  // State for selected filters - we only need to store category IDs
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
-  const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
   const [selectedCompatibilities, setSelectedCompatibilities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [selectedIsAssembly, setSelectedIsAssembly] = useState<boolean | undefined>(isAssembly);
+  const [selectedParts, setSelectedParts] = useState<string[]>([]);
   
   // State for expanded accordion items
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Helper function to compare arrays
+  const areArraysEqual = useCallback((a: any[], b: any[]) => {
+    if (a.length !== b.length) return false;
+    return a.every((val, index) => val === b[index]);
+  }, []);
 
   // Initialize filters based on initialComponent
   useEffect(() => {
-    if (initialComponent && componentCategoryMap[initialComponent]) {
-      const { category, subcategory } = componentCategoryMap[initialComponent];
-      setSelectedCategories([category]);
-      setSelectedSubcategories([subcategory]);
-      setExpandedCategories([category]); // Expand the relevant category
-      setExpandedItems([subcategory]); // Expand the relevant subcategory
+    // Skip if categories are still loading
+    if (categoriesLoading) return;
+    
+    // If initialFilters is provided, use those values for our individual state variables
+    if (initialFilters) {
+      setSelectedCategories(initialFilters.subcategories || []);
+      setSelectedManufacturers(initialFilters.manufacturers || []);
+      setSelectedCompatibilities(initialFilters.compatibilities || []);
+      setPriceRange(initialFilters.priceRange || [0, 1000]);
+      setSelectedIsAssembly(initialFilters.isAssembly);
+    } else if (initialComponent && flatCategories && Object.keys(flatCategories).length > 0) {
+      // Try to find the category by name in our flat categories
+      const categoryEntry = Object.values(flatCategories).find(cat => 
+        cat.name.toLowerCase() === initialComponent.toLowerCase()
+      );
+      
+      if (categoryEntry) {
+        // Only update if it's not already set to prevent loops
+        setSelectedCategories(prev => {
+          if (prev.length === 0 || !prev.includes(categoryEntry.id.toString())) {
+            return [categoryEntry.id.toString()];
+          }
+          return prev;
+        });
+        console.log(`Initialized category from initialComponent: ${categoryEntry.name} (ID: ${categoryEntry.id})`);
+      }
     }
-  }, [initialComponent]);
+    
+    // Notify parent component that filtering is starting (if provided)
+    if (setIsFiltering) {
+      setIsFiltering(true);
+    }
+  }, [initialComponent, initialFilters, categoriesLoading, setIsFiltering]);
 
   // Find the ID of a part in the hierarchy by its name
   const findPartIdByName = useCallback((name: string, hierarchy: PartHierarchyItem[]): string | null => {
@@ -104,93 +338,132 @@ export default function ProductFilters({ initialComponent, isAssembly, onFilterC
     }
   }, [partHierarchy, initialComponent, findPartIdByName]);
 
-  // Notify parent component when filters change
-  useEffect(() => {
-    if (onFilterChange) {
-      const currentFilters = {
-        category: selectedCategories.length > 0 ? selectedCategories[0] : null,
-        subcategories: selectedSubcategories,
-        manufacturers: selectedManufacturers,
-        compatibilities: selectedCompatibilities,
-        priceRange,
-        isAssembly,
-      };
-      
-      onFilterChange(currentFilters);
-    }
-  }, [
+  // Memoize current filters to prevent unnecessary renders
+  const currentFilters = useMemo(() => ({
+    subcategories: selectedCategories,
+    manufacturers: selectedManufacturers,
+    compatibilities: selectedCompatibilities,
+    priceRange,
+    isAssembly: selectedIsAssembly,
+  }), [
     selectedCategories, 
-    selectedSubcategories, 
     selectedManufacturers, 
     selectedCompatibilities, 
     priceRange, 
-    isAssembly,
-    onFilterChange
+    selectedIsAssembly
   ]);
 
-  // Toggle expansion of an item
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedItems(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  }, []);
-
-  // Handle part selection at any level of the hierarchy
-  const handlePartSelection = useCallback((part: PartHierarchyItem, checked: boolean) => {
-    // Update selected parts
-    if (checked) {
-      setSelectedParts(prev => [...prev, part.id]);
+  // Notify parent component when filters change
+  useEffect(() => {
+    // Only call onFilterChange if it exists
+    if (onFilterChange) {
+      // Log the current filters for debugging
+      console.log('Current filters:', currentFilters);
       
-      // Add parent categories based on the hierarchy level
-      if (part.children && part.children.length > 0) {
-        // This is a top-level or mid-level category
-        setSelectedCategories(prev => [...prev, part.name]);
-      } else {
-        // This is likely a leaf/component
-        setSelectedSubcategories(prev => [...prev, part.id]);
-      }
+      const prevFilters = prevFiltersRef.current;
       
-      // Expand the item if it has children
-      if (part.children && part.children.length > 0) {
-        setExpandedItems(prev => [...prev, part.id]);
-      }
-    } else {
-      // Remove this part
-      setSelectedParts(prev => prev.filter(id => id !== part.id));
-      
-      // If it has children, it's a category - remove it and all its children
-      if (part.children && part.children.length > 0) {
-        setSelectedCategories(prev => prev.filter(category => category !== part.name));
+      // Only call onFilterChange if the filters have actually changed
+      if (!prevFilters || 
+          !areArraysEqual(prevFilters.subcategories, currentFilters.subcategories) ||
+          !areArraysEqual(prevFilters.manufacturers, currentFilters.manufacturers) ||
+          !areArraysEqual(prevFilters.compatibilities, currentFilters.compatibilities) ||
+          prevFilters.priceRange[0] !== currentFilters.priceRange[0] ||
+          prevFilters.priceRange[1] !== currentFilters.priceRange[1] ||
+          prevFilters.isAssembly !== currentFilters.isAssembly) {
         
-        // Remove all child items recursively
-        const childIdsToRemove = getAllChildIds(part);
-        setSelectedParts(prev => prev.filter(id => !childIdsToRemove.includes(id)));
-        setSelectedSubcategories(prev => prev.filter(id => !childIdsToRemove.includes(id)));
-      } else {
-        // Just remove this subcategory
-        setSelectedSubcategories(prev => prev.filter(id => id !== part.id));
+        // Update the ref with current filters
+        prevFiltersRef.current = {...currentFilters};
+        
+        // Call the callback
+        onFilterChange(currentFilters);
       }
     }
-  }, []);
+  }, [currentFilters, onFilterChange, areArraysEqual]);
 
-  // Helper function to get all child IDs recursively
-  const getAllChildIds = useCallback((part: PartHierarchyItem): string[] => {
-    const ids: string[] = [part.id];
-    
-    if (part.children) {
-      for (const child of part.children) {
-        ids.push(...getAllChildIds(child));
-      }
+  // Handle category selection with deep hierarchy support
+  const handleCategoryChange = useCallback((categoryId: string, isChecked: boolean) => {
+    if (isChecked) {
+      // When selecting a category, add it to selected categories
+      setSelectedCategories(prev => {
+        // Skip update if already selected
+        if (prev.includes(categoryId)) {
+          return prev;
+        }
+        
+        // Get the category from our flat map
+        const category = flatCategories[categoryId];
+        if (!category) {
+          return [...prev, categoryId];
+        }
+        
+        // If the category has children, recursively find all child IDs
+        if (category.child_categories && category.child_categories.length > 0) {
+          // Helper function to collect all child category IDs
+          const getAllChildIds = (categories: PartCategory[]): string[] => {
+            let ids: string[] = [];
+            for (const child of categories) {
+              ids.push(child.id.toString());
+              if (child.child_categories && child.child_categories.length > 0) {
+                ids = [...ids, ...getAllChildIds(child.child_categories)];
+              }
+            }
+            return ids;
+          };
+          
+          // Add all child categories to the selection
+          const childIds = getAllChildIds(category.child_categories);
+          
+          // Combine all IDs and remove duplicates
+          const newSelected = [...prev, categoryId, ...childIds];
+          return [...new Set(newSelected)];
+        }
+        
+        return [...prev, categoryId];
+      });
+    } else {
+      // When deselecting a category, remove it from selected categories
+      setSelectedCategories(prev => {
+        // Skip update if not currently selected
+        if (!prev.includes(categoryId)) {
+          return prev;
+        }
+        
+        // Get the category from our flat map
+        const category = flatCategories[categoryId];
+        if (!category) {
+          return prev.filter(id => id !== categoryId);
+        }
+        
+        // If the category has children, recursively remove all child IDs
+        if (category.child_categories && category.child_categories.length > 0) {
+          // Helper function to collect all child category IDs
+          const getAllChildIds = (categories: PartCategory[]): string[] => {
+            let ids: string[] = [];
+            for (const child of categories) {
+              ids.push(child.id.toString());
+              if (child.child_categories && child.child_categories.length > 0) {
+                ids = [...ids, ...getAllChildIds(child.child_categories)];
+              }
+            }
+            return ids;
+          };
+          
+          // Remove all child categories from the selection
+          const childIds = getAllChildIds(category.child_categories);
+          return prev.filter(id => id !== categoryId && !childIds.includes(id));
+        }
+        
+        return prev.filter(id => id !== categoryId);
+      });
     }
-    
-    return ids;
-  }, []);
+  }, [flatCategories]);
 
-  const handleManufacturerChange = useCallback((manufacturerId: string, checked: boolean) => {
+  // Add handler for manufacturer checkboxes
+  const handleManufacturerChange = useCallback((manufacturerId: string, isChecked: boolean) => {
     setSelectedManufacturers(prev => 
-      checked
-        ? [...prev, manufacturerId]
-        : prev.filter(id => id !== manufacturerId)
+      isChecked 
+        ? [...prev, manufacturerId] 
+        : prev.filter(m => m !== manufacturerId)
     );
   }, []);
 
@@ -213,194 +486,74 @@ export default function ProductFilters({ initialComponent, isAssembly, onFilterC
 
   const handleResetFilters = useCallback(() => {
     setSelectedCategories([]);
-    setSelectedSubcategories([]);
     setSelectedParts([]);
     setSelectedManufacturers([]);
     setSelectedCompatibilities([]);
     setPriceRange([0, 1000]);
   }, []);
 
-  // Recursive function to render part hierarchy
-  const renderPartHierarchy = useCallback((parts: PartHierarchyItem[], level = 0) => {
-    return parts.map(part => {
-      const hasChildren = part.children && part.children.length > 0;
-      const isSelected = selectedParts.includes(part.id);
-      const isExpanded = expandedItems.includes(part.id);
-      
-      // Calculate the appropriate margin class based on the level
-      const marginClass = level === 0 ? '' : level === 1 ? 'ml-4' : level === 2 ? 'ml-8' : 'ml-12';
-      
-      return (
-        <div key={part.id} className={marginClass}>
-          <div className="flex items-center py-2">
-            {hasChildren ? (
-              <button 
-                onClick={() => toggleExpand(part.id)}
-                className="mr-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </button>
-            ) : (
-              <span className="w-6 mr-2"></span>
-            )}
-            <Checkbox 
-              id={`part-${part.id}`}
-              checked={isSelected}
-              onCheckedChange={(checked) => 
-                handlePartSelection(part, checked === true)
-              }
-              className="mr-2"
-            />
-            <Label 
-              htmlFor={`part-${part.id}`}
-              className={`text-sm ${level === 0 ? 'font-medium text-gray-900 dark:text-gray-300' : 'text-gray-700 dark:text-gray-400'}`}
-            >
-              {part.name}
-            </Label>
-          </div>
-          
-          {hasChildren && isExpanded && (
-            <div className="ml-6">
-              {renderPartHierarchy(part.children || [], level + 1)}
-            </div>
-          )}
-        </div>
-      );
-    });
-  }, [expandedItems, selectedParts, toggleExpand, handlePartSelection]);
+  // Add handler for assembly checkbox
+  const handleAssemblyChange = useCallback((isChecked: boolean) => {
+    setSelectedIsAssembly(isChecked);
+  }, []);
 
-  // Show loading state while data is being fetched
-  if (categoriesLoading || manufacturersLoading || compatibilitiesLoading || hierarchyLoading) {
+  // Render categories section - memoized with hierarchical accordion
+  const renderCategoriesSection = useCallback(() => {
     return (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Filters</h2>
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-        </div>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-3">Categories</h3>
+        {categoriesLoading ? (
+          <div>Loading categories...</div>
+        ) : (
+          <CategoryTree
+            categories={categoryHierarchy}
+            selectedCategories={selectedCategories}
+            onCategoryChange={handleCategoryChange}
+          />
+        )}
       </div>
     );
+  }, [
+    categoryHierarchy, 
+    categoriesLoading, 
+    selectedCategories, 
+    handleCategoryChange,
+  ]);
+
+  // Show loading state while data is being fetched
+  if (categoriesLoading || manufacturersLoading || compatibilitiesLoading) {
+    return <div className="p-4">Loading filter options...</div>;
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Filters</h2>
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold mb-4">Filters</h2>
       
-      {isAssembly && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            Showing assembly products only
-          </p>
-        </div>
-      )}
-      
-      {/* Part Type Hierarchy */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Product Type</h3>
-        <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md max-h-80 overflow-y-auto">
-          {partHierarchy.length > 0 ? (
-            renderPartHierarchy(partHierarchy)
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400">No product categories found.</p>
-          )}
-        </div>
-      </div>
+      {/* Category Filter */}
+      {renderCategoriesSection()}
       
       {/* Manufacturer Filter */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Manufacturer</h3>
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-          {manufacturers.map(manufacturer => (
-            <div key={manufacturer.id} className="flex items-center">
-              <Checkbox 
-                id={`manufacturer-${manufacturer.id}`}
-                checked={selectedManufacturers.includes(manufacturer.id.toString())}
-                onCheckedChange={(checked) => 
-                  handleManufacturerChange(manufacturer.id.toString(), checked === true)
-                }
-                className="mr-2"
-              />
-              <Label 
-                htmlFor={`manufacturer-${manufacturer.id}`}
-                className="text-sm text-gray-700 dark:text-gray-400"
-              >
-                {manufacturer.name}
-              </Label>
-            </div>
+        <h3 className="text-lg font-semibold mb-3">Manufacturers</h3>
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {manufacturers.map((manufacturer) => (
+            <ManufacturerCheckbox
+              key={manufacturer.id}
+              manufacturer={manufacturer}
+              isSelected={selectedManufacturers.includes(manufacturer.id.toString())}
+              onChange={handleManufacturerChange}
+            />
           ))}
         </div>
       </div>
       
-      {/* Compatibility Filter */}
+      {/* Assembly Type Filter */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Compatibility</h3>
-        <div className="space-y-2">
-          {compatibilities.map(compatibility => (
-            <div key={compatibility} className="flex items-center">
-              <Checkbox 
-                id={`compatibility-${compatibility}`}
-                checked={selectedCompatibilities.includes(compatibility)}
-                onCheckedChange={(checked) => 
-                  handleCompatibilityChange(compatibility, checked === true)
-                }
-                className="mr-2"
-              />
-              <Label 
-                htmlFor={`compatibility-${compatibility}`}
-                className="text-sm text-gray-700 dark:text-gray-400"
-              >
-                {compatibility}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Price Range Filter */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Price Range</h3>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-gray-900 dark:text-gray-300">${priceRange[0]}</span>
-          <span className="text-gray-900 dark:text-gray-300">${priceRange[1]}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="min-price" className="block text-sm text-gray-900 dark:text-gray-300 mb-1">Min</label>
-            <input
-              type="number"
-              id="min-price"
-              min="0"
-              max={priceRange[1]}
-              value={priceRange[0]}
-              onChange={(e) => handlePriceChange(e, 0)}
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="max-price" className="block text-sm text-gray-900 dark:text-gray-300 mb-1">Max</label>
-            <input
-              type="number"
-              id="max-price"
-              min={priceRange[0]}
-              value={priceRange[1]}
-              onChange={(e) => handlePriceChange(e, 1)}
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Reset Button */}
-      <div className="flex flex-col space-y-2">
-        <button
-          onClick={handleResetFilters}
-          className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
-        >
-          Reset Filters
-        </button>
+        <h3 className="text-lg font-semibold mb-3">Product Type</h3>
+        <AssemblyCheckbox
+          isSelected={selectedIsAssembly === true}
+          onChange={handleAssemblyChange}
+        />
       </div>
     </div>
   );

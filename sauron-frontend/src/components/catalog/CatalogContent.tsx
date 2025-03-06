@@ -12,10 +12,10 @@ interface CatalogContentProps {
   selectedProductId?: string | null;
   returnToBuilder?: boolean;
   compatibility?: string;
+  categoryId?: number;
 }
 
 interface FilterState {
-  category: string | null;
   subcategories: string[];
   manufacturers: string[];
   compatibilities: string[];
@@ -29,61 +29,65 @@ export default function CatalogContent({
   onSelectProduct,
   selectedProductId,
   returnToBuilder = false,
-  compatibility
+  compatibility,
+  categoryId
 }: CatalogContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pageTitle, setPageTitle] = useState('Product Catalog');
-  const [filters, setFilters] = useState<FilterState>({
-    category: null,
-    subcategories: [],
-    manufacturers: [],
-    compatibilities: compatibility ? [compatibility] : [],
-    priceRange: [0, 1000],
-    isAssembly
+  const [filters, setFilters] = useState<FilterState>(() => {
+    // Initialize filters only once when the component mounts
+    const initialFilters: FilterState = {
+      subcategories: [],
+      manufacturers: [],
+      compatibilities: compatibility ? [compatibility] : [],
+      priceRange: [0, 2000],
+      isAssembly: isAssembly
+    };
+    return initialFilters;
   });
+  const [isFiltering, setIsFiltering] = useState(false);
 
   // Format page title based on component ID
   useEffect(() => {
     if (componentId) {
-      // Convert kebab-case to Title Case
-      const formattedComponent = componentId
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      
-      setPageTitle(`${formattedComponent} ${isAssembly ? 'Assemblies' : 'Parts'}`);
+      setPageTitle(`${componentId}${isAssembly ? ' Assemblies' : ''}`);
     } else {
       setPageTitle('Product Catalog');
     }
   }, [componentId, isAssembly]);
 
-  // Handle filter changes - memoized to prevent recreation on renders
+  // Handle filter changes
   const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
-    // Update URL with filter parameters (optional)
   }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{pageTitle}</h1>
+      <h1 className="text-2xl font-bold mb-6">{pageTitle}</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <ProductFilters 
-            initialComponent={componentId} 
-            isAssembly={isAssembly}
-            onFilterChange={handleFilterChange}
-          />
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Filters sidebar */}
+        <div className="lg:w-1/4">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <ProductFilters 
+              initialComponent={componentId}
+              isAssembly={isAssembly}
+              onFilterChange={handleFilterChange}
+              setIsFiltering={setIsFiltering}
+            />
+          </div>
         </div>
         
-        <div className="md:col-span-3">
+        {/* Product listing */}
+        <div className="lg:w-3/4">
           <ProductCatalog 
             componentFilter={componentId}
             isAssembly={isAssembly}
             onSelectProduct={onSelectProduct}
             selectedProductId={selectedProductId}
             returnToBuilder={returnToBuilder}
+            category_id={categoryId}
             filters={filters}
           />
         </div>

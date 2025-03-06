@@ -18,12 +18,13 @@ interface ProductCatalogProps {
   onSelectProduct?: (productId: string) => void;
   selectedProductId?: string | null;
   returnToBuilder?: boolean;
+  category_id?: number;
   filters?: {
-    category: string | null;
     subcategories: string[];
     manufacturers: string[];
     compatibilities: string[];
     priceRange: [number, number];
+    isAssembly?: boolean;
   };
 }
 
@@ -33,6 +34,7 @@ export default function ProductCatalog({
   onSelectProduct,
   selectedProductId,
   returnToBuilder = false,
+  category_id,
   filters
 }: ProductCatalogProps) {
   const [products, setProducts] = useState<Part[]>([]);
@@ -71,7 +73,7 @@ export default function ProductCatalog({
     return () => {
       isMounted = false;
     };
-  }, [partsCache]);
+  }, []);
 
   // Apply filters whenever they change
   useEffect(() => {
@@ -79,64 +81,23 @@ export default function ProductCatalog({
 
     let filteredParts = [...partsCache];
     
-    // Filter by component type if specified
-    if (componentFilter) {
-      console.log(`Filtering by component: ${componentFilter}`);
+    // Filter by category_id (new schema) if specified
+    if (category_id) {
+      console.log(`Filtering by category_id: ${category_id}`);
       
       filteredParts = filteredParts.filter(part => {
-        // For exact category or subcategory matches (preferred)
-        if (part.category === componentFilter || part.subcategory === componentFilter) {
-          return true;
-        }
-        
-        // Handle mismatched category/subcategory
-        // In the case of "Lower Receiver" as componentFilter but "Lower Assembly"/"Lower Receiver" as category/subcategory
-        if (componentFilter === "Lower Receiver" && (
-            (part.category === "Lower Assembly" && part.subcategory === "Lower Receiver") ||
-            (part.category === "Lower Receiver" && part.subcategory?.includes("Lower"))
-        )) {
-          return true;
-        }
-
-        // Check if part name contains the component filter
-        // This helps with "Complete Lower Receiver" when looking for "Lower Receiver"
-        if (part.name.toLowerCase().includes(componentFilter.toLowerCase())) {
-          return true;
-        }
-        
-        // For case-insensitive exact matches
-        if (part.category?.toLowerCase() === componentFilter.toLowerCase() || 
-            part.subcategory?.toLowerCase() === componentFilter.toLowerCase()) {
-          return true;
-        }
-        
-        // Special cases for components that need more flexible matching
-        const flexibleMatchCategories = ['grip', 'stock', 'magazine', 'optic', 'receiver', 'lower receiver', 'upper receiver'];
-        if (flexibleMatchCategories.some(cat => componentFilter.toLowerCase().includes(cat))) {
-          const isFlexMatch = 
-            (part.category?.toLowerCase().includes(componentFilter.toLowerCase()) && 
-             !part.category?.toLowerCase().includes('fore' + componentFilter.toLowerCase())) || 
-            (part.subcategory?.toLowerCase().includes(componentFilter.toLowerCase()) && 
-             !part.subcategory?.toLowerCase().includes('fore' + componentFilter.toLowerCase())) ||
-            (componentFilter.toLowerCase().includes('receiver') && 
-             part.name.toLowerCase().includes(componentFilter.toLowerCase()));
-          
-          if (isFlexMatch) return true;
-        }
-        
-        // For word boundary matches (to prevent "Grip" matching "Foregrip")
-        // Split on spaces and hyphens to handle terms like "bolt-carrier-group"
-        const categoryWords = part.category?.toLowerCase().split(/[\s-]+/) || [];
-        const subcategoryWords = part.subcategory?.toLowerCase().split(/[\s-]+/) || [];
-        const filterWords = componentFilter.toLowerCase().split(/[\s-]+/);
-        
-        // Check if ALL filter words appear as EXACT words in the category or subcategory
-        return filterWords.every(filterWord => 
-          categoryWords.includes(filterWord) || subcategoryWords.includes(filterWord)
-        );
+        // Direct match on category ID
+        return part.part_category_id === category_id;
       });
+    }
+    // Filter by component using its category_id
+    else if (filters && filters.subcategories && filters.subcategories.length > 0) {
+      console.log(`Filtering by category IDs: ${filters.subcategories}`);
       
-      console.log(`Found ${filteredParts.length} parts matching component filter: ${componentFilter}`);
+      filteredParts = filteredParts.filter(part => {
+        // Only match based on part_category_id
+        return part.part_category_id && filters.subcategories.includes(part.part_category_id.toString());
+      });
     }
     
     // Filter by assembly status
@@ -146,65 +107,6 @@ export default function ProductCatalog({
     
     // Apply additional filters if provided
     if (filters) {
-      // Filter by category
-      if (filters.category) {
-        const categoryFilter = filters.category; // Create a local non-null variable
-        filteredParts = filteredParts.filter(part => {
-          // Check if part directly matches the category
-          if (part.category === categoryFilter) {
-            return true;
-          }
-          
-          // If subcategories are selected, we'll handle category filtering along with subcategories
-          if (filters.subcategories && filters.subcategories.length > 0) {
-            return false; // Will be handled by subcategory filter
-          }
-          
-          // For parts that might be in subcategories, we need to check if they belong to any subcategory
-          // that might be a child of this category
-          // This is a simplification - ideally, we would have a more structured way to determine child categories
-          return (part.category && part.category.includes(categoryFilter)) || 
-                 (part.subcategory && part.subcategory.includes(categoryFilter));
-        });
-      }
-      
-      // Filter by subcategories - improved to handle hierarchical structure
-      if (filters.subcategories && filters.subcategories.length > 0) {
-        filteredParts = filteredParts.filter(part => {
-          // Check if part directly matches any of the selected subcategories
-          if (filters.subcategories.some(subcat => 
-              part.subcategory === subcat ||
-              part.subcategory?.includes(subcat) ||
-              part.category === subcat ||
-              part.category?.includes(subcat))) {
-            return true;
-          }
-          
-          // Check for specific component cases that might not match directly
-          // For example, if "Gas System" is selected, we want to include "Gas Block", "Gas Tube", etc.
-          const partNameLower = part.name.toLowerCase();
-          return filters.subcategories.some(subcat => {
-            const subcatLower = subcat.toLowerCase();
-            // Check if the part name contains any keywords related to the subcategory
-            if (partNameLower.includes(subcatLower)) {
-              return true;
-            }
-            
-            // Handle specific mappings that aren't obvious
-            // Gas System should include gas tubes, gas blocks, etc.
-            if (subcatLower.includes('gas system') && 
-                (partNameLower.includes('gas tube') || 
-                 partNameLower.includes('gas block'))) {
-              return true;
-            }
-            
-            // Add more specific cases as needed
-            
-            return false;
-          });
-        });
-      }
-      
       // Filter by manufacturers
       if (filters.manufacturers && filters.manufacturers.length > 0) {
         filteredParts = filteredParts.filter(part => 
@@ -241,7 +143,7 @@ export default function ProductCatalog({
     }
     
     setProducts(filteredParts);
-  }, [partsCache, componentFilter, isAssembly, filters]);
+  }, [partsCache, componentFilter, isAssembly, filters, category_id]);
 
   if (loading && !partsCache) {
     return (

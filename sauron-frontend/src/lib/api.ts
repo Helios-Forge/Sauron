@@ -4,6 +4,26 @@ import { useEffect, useState } from 'react';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Types based on backend models
+export interface PartCategory {
+  id: number;
+  name: string;
+  parent_category_id?: number | null;
+  description?: string;
+  child_categories?: PartCategory[];
+  ChildCategories?: PartCategory[];
+  is_required?: boolean; // For FirearmModelPartCategory relationships
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FirearmModelPartCategory {
+  id: number;
+  firearm_model_id: number;
+  part_category_id: number;
+  is_required: boolean;
+  created_at?: string;
+}
+
 export interface FirearmModel {
   id: number;
   name: string;
@@ -21,6 +41,8 @@ export interface FirearmModel {
     type: string;
     sub_parts: Record<string, any>;
   }>;
+  // New schema field for part categories (through many-to-many relationship)
+  part_categories?: PartCategory[];
   images: string[];
   price_range: string;
   created_at: string;
@@ -44,8 +66,12 @@ export interface Part {
   name: string;
   description: string;
   manufacturer_id: number;
+  // Legacy category fields - will be removed after migration
   category: string;
   subcategory: string;
+  // New schema field for part category
+  part_category_id?: number;
+  part_category?: PartCategory;
   is_prebuilt: boolean;
   sub_components: Array<{
     name: string;
@@ -393,14 +419,20 @@ export async function getManufacturerById(id: number): Promise<Manufacturer | nu
   }
 }
 
-// Get unique categories from backend endpoint
-export async function getCategories(): Promise<string[]> {
+// Get hierarchical part categories from backend endpoint
+export async function getCategories(recursive: boolean = true): Promise<PartCategory[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/part-categories`);
+    // Ensure we always get the complete hierarchy by setting recursive=true
+    const response = await fetch(`${API_BASE_URL}/part-categories?recursive=true`);
+    
     if (!response.ok) {
       throw new Error(`Error fetching categories: ${response.statusText}`);
     }
-    return response.json();
+    
+    // Log the response to help with debugging
+    const data = await response.json();
+    console.log('Part categories hierarchy:', data);
+    return data;
   } catch (error) {
     console.error('Failed to fetch categories:', error);
     return [];
@@ -485,10 +517,10 @@ export function useManufacturers() {
   return { manufacturers, loading, error };
 }
 
-// Custom hook for fetching categories and subcategories with loading state
+// Enhanced hook for fetching the complete part category hierarchy
 export function useCategoriesAndSubcategories() {
-  const [categories, setCategories] = useState<string[]>([]);
-  const [subcategories, setSubcategories] = useState<Record<string, string[]>>({});
+  const [categoryHierarchy, setCategoryHierarchy] = useState<PartCategory[]>([]);
+  const [flatCategories, setFlatCategories] = useState<Record<string, PartCategory>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -498,14 +530,41 @@ export function useCategoriesAndSubcategories() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [categoriesData, subcategoriesData] = await Promise.all([
-          getCategories(),
-          getAllSubcategories()
-        ]);
+        // Get hierarchical categories data from the API
+        const hierarchicalCategories = await getCategories(true);
         
         if (isMounted) {
-          setCategories(categoriesData);
-          setSubcategories(subcategoriesData);
+          // Log the hierarchical structure for debugging
+          console.log('Received hierarchical categories:', hierarchicalCategories);
+          
+          // Process the categories to normalize the field names
+          const processedCategories = hierarchicalCategories.map(normalizeCategory);
+          
+          // Save the hierarchical structure
+          setCategoryHierarchy(processedCategories);
+          
+          // Create a flat map of all categories for easy lookup
+          const categoriesMap: Record<string, PartCategory> = {};
+          
+          // Function to recursively flatten the category hierarchy
+          const flattenCategories = (categories: PartCategory[]): void => {
+            if (!categories) return;
+            
+            categories.forEach(category => {
+              if (!category) return;
+              
+              categoriesMap[category.id.toString()] = category;
+              
+              if (category.child_categories && category.child_categories.length > 0) {
+                flattenCategories(category.child_categories);
+              }
+            });
+          };
+          
+          flattenCategories(processedCategories);
+          console.log('Flattened categories map:', categoriesMap);
+          setFlatCategories(categoriesMap);
+          
           setError(null);
           setLoading(false);
         }
@@ -524,7 +583,24 @@ export function useCategoriesAndSubcategories() {
     };
   }, []); // Empty dependency array so it only runs once
 
-  return { categories, subcategories, loading, error };
+  return { categoryHierarchy, flatCategories, loading, error };
+}
+
+// Helper function to normalize category field names
+function normalizeCategory(category: PartCategory): PartCategory {
+  // Create a new object with the normalized field names
+  const normalized: PartCategory = {
+    ...category,
+    // Use ChildCategories if available, otherwise use child_categories or empty array
+    child_categories: category.ChildCategories || category.child_categories || []
+  };
+  
+  // Process child categories recursively
+  if (normalized.child_categories && normalized.child_categories.length > 0) {
+    normalized.child_categories = normalized.child_categories.map(normalizeCategory);
+  }
+  
+  return normalized;
 }
 
 // Custom hook for fetching compatible firearm models with loading state
@@ -611,4 +687,94 @@ export function usePartHierarchy() {
   }, []);
 
   return { hierarchy, loading, error };
+}
+
+// Fetch part categories with optional recursive flag
+export async function getPartCategories(recursive: boolean = false): Promise<PartCategory[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-categories?recursive=${recursive}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch part categories');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching part categories:', error);
+    return [];
+  }
+}
+
+// Fetch a single part category by ID with optional recursive flag
+export async function getPartCategoryById(id: number, recursive: boolean = false): Promise<PartCategory | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/part-categories/${id}?recursive=${recursive}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch part category');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching part category with ID ${id}:`, error);
+    return null;
+  }
+}
+
+// Fetch parts by category ID (new schema)
+export async function getPartsByCategoryId(categoryId: number): Promise<Part[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/parts?category_id=${categoryId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch parts by category ID');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching parts for category ID ${categoryId}:`, error);
+    return [];
+  }
+}
+
+// Fetch categories for a specific firearm model
+export async function getFirearmModelCategories(
+  modelId: number, 
+  required: boolean | null = null
+): Promise<PartCategory[]> {
+  try {
+    let url = `${API_BASE_URL}/firearm-models/${modelId}/categories`;
+    if (required !== null) {
+      url += `?required=${required}`;
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch firearm model categories');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching categories for firearm model with ID ${modelId}:`, error);
+    return [];
+  }
+}
+
+// Hook to use part categories
+export function usePartCategories(recursive: boolean = false) {
+  const [categories, setCategories] = useState<PartCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const data = await getPartCategories(recursive);
+        setCategories(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error in usePartCategories:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [recursive]);
+
+  return { categories, loading, error };
 } 
