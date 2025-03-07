@@ -14,7 +14,7 @@ type PartCategory struct {
 	Name string `json:"name" gorm:"size:100;not null" example:"Upper Assembly"`
 
 	// Parent category ID for hierarchical relationships (null for top-level categories)
-	ParentCategoryID *int `json:"parent_category_id,omitempty" gorm:"index" example:"null"`
+	ParentCategoryID *int `json:"parent_category_id,omitempty" gorm:"index" example:"0"`
 
 	// Parent category (self-referential relationship)
 	ParentCategory *PartCategory `json:"parent_category,omitempty" gorm:"foreignKey:ParentCategoryID"`

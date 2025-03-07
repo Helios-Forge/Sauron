@@ -11,6 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// PartItem represents a node in the part hierarchy
+type PartItem struct {
+	Name     string     `json:"name" example:"Upper Receiver"`
+	ID       string     `json:"id" example:"upper-receiver"`
+	Children []PartItem `json:"children,omitempty"`
+}
+
 // Get all parts
 // @Summary Get all parts
 // @Description Get all parts with optional filtering by category, subcategory, or category_id
@@ -22,6 +29,7 @@ import (
 // @Param category_id query int false "Filter by part category ID (new schema)"
 // @Param is_prebuilt query bool false "Filter by prebuilt status"
 // @Success 200 {array} models.Part
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /parts [get]
 func GetParts(c *gin.Context) {
 	var parts []models.Part
@@ -60,6 +68,16 @@ func GetParts(c *gin.Context) {
 }
 
 // Create a new part
+// @Summary Create a part
+// @Description Create a new part in the database
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param part body models.Part true "Part object to create"
+// @Success 201 {object} models.Part
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /parts [post]
 func CreatePart(c *gin.Context) {
 	var part models.Part
 	if err := c.ShouldBindJSON(&part); err != nil {
@@ -71,6 +89,17 @@ func CreatePart(c *gin.Context) {
 }
 
 // Get a part by ID
+// @Summary Get part by ID
+// @Description Get a specific part by its ID
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param id path int true "Part ID"
+// @Success 200 {object} models.Part
+// @Failure 400 {object} map[string]string "Invalid ID format"
+// @Failure 404 {object} map[string]string "Part not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /parts/{id} [get]
 func GetPartByID(c *gin.Context) {
 	id := c.Param("id")
 	var part models.Part
@@ -82,6 +111,18 @@ func GetPartByID(c *gin.Context) {
 }
 
 // Update a part
+// @Summary Update a part
+// @Description Update an existing part
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param id path int true "Part ID"
+// @Param part body models.Part true "Updated part object"
+// @Success 200 {object} models.Part
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 404 {object} map[string]string "Part not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /parts/{id} [put]
 func UpdatePart(c *gin.Context) {
 	id := c.Param("id")
 	var part models.Part
@@ -98,6 +139,17 @@ func UpdatePart(c *gin.Context) {
 }
 
 // Delete a part
+// @Summary Delete a part
+// @Description Delete a specific part
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param id path int true "Part ID"
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid ID format"
+// @Failure 404 {object} map[string]string "Part not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /parts/{id} [delete]
 func DeletePart(c *gin.Context) {
 	id := c.Param("id")
 	if err := db.DB.Delete(&models.Part{}, id).Error; err != nil {
@@ -108,6 +160,15 @@ func DeletePart(c *gin.Context) {
 }
 
 // Get parts by category
+// @Summary Get parts by category
+// @Description Get all parts in a specific category
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param category path string true "Category name"
+// @Success 200 {array} models.Part
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /parts/category/{category} [get]
 func GetPartsByCategory(c *gin.Context) {
 	category := c.Param("category")
 	var parts []models.Part
@@ -117,12 +178,15 @@ func GetPartsByCategory(c *gin.Context) {
 
 // Get parts compatible with a specific part
 // @Summary Get compatible parts
-// @Description Get parts that are compatible with a specific part
-// @Tags Parts
+// @Description Get all parts compatible with a specific part
+// @Tags Parts,Compatibility
 // @Accept json
 // @Produce json
 // @Param id path int true "Part ID"
 // @Success 200 {array} models.Part
+// @Failure 400 {object} map[string]string "Invalid ID format"
+// @Failure 404 {object} map[string]string "Part not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /parts/{id}/compatible [get]
 func GetCompatibleParts(c *gin.Context) {
 	partID, err := strconv.Atoi(c.Param("id"))
@@ -319,16 +383,9 @@ func GetCompatibleFirearmModels(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {array} PartItem
-// @Router /parts/hierarchy [get]
+// @Router /part-hierarchy [get]
 func GetPartHierarchy(c *gin.Context) {
 	// This endpoint now uses the part_categories table instead of the legacy JSON structure
-
-	// PartItem represents a node in the part hierarchy
-	type PartItem struct {
-		Name     string     `json:"name"`
-		ID       string     `json:"id"`
-		Children []PartItem `json:"children,omitempty"`
-	}
 
 	// Get all part categories with parent-child relationships
 	var categories []models.PartCategory

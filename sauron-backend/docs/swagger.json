@@ -4,348 +4,23 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "A comprehensive API for managing firearm parts, models, and compatibility.",
+        "description": "A comprehensive API for firearms database management including parts, models, categories, product listings, and compatibility.",
         "title": "Sauron Backend API",
-        "termsOfService": "http://swagger.io/terms/",
+        "termsOfService": "https://sauron.io/terms/",
         "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
+            "name": "Sauron API Support",
+            "url": "https://sauron.io/support",
+            "email": "support@sauron.io"
         },
         "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
         },
-        "version": "1.0"
+        "version": "2.0"
     },
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
-        "/compatibility-check": {
-            "get": {
-                "description": "Check if two parts are compatible for a specific firearm model",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Check parts compatibility",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Firearm Model ID",
-                        "name": "firearmId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "First Part ID",
-                        "name": "part1",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Second Part ID",
-                        "name": "part2",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/compatibility-rules": {
-            "get": {
-                "description": "Get a list of all compatibility rules in the database",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Get all compatibility rules",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Add a new compatibility rule to the database",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Create a new compatibility rule",
-                "parameters": [
-                    {
-                        "description": "Compatibility Rule Info",
-                        "name": "rule",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/compatibility-rules/firearm/{firearmId}/part/{partId}": {
-            "get": {
-                "description": "Get all compatibility rules for a specific firearm model and part",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Get compatibility rules by firearm and part",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Firearm Model ID",
-                        "name": "firearmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Part ID",
-                        "name": "partId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/compatibility-rules/part/{partId}": {
-            "get": {
-                "description": "Get all compatibility rules for a specific part",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Get compatibility rules by part ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Part ID",
-                        "name": "partId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/compatibility-rules/{id}": {
-            "get": {
-                "description": "Get details of a specific compatibility rule",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Get a compatibility rule by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Compatibility Rule ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update details of a specific compatibility rule",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Update a compatibility rule",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Compatibility Rule ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated Compatibility Rule Info",
-                        "name": "rule",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.CompatibilityRule"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a specific compatibility rule",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Compatibility Rules"
-                ],
-                "summary": "Delete a compatibility rule",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Compatibility Rule ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/firearm-models": {
             "get": {
                 "description": "Get a list of all firearm models in the database",
@@ -365,7 +40,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                                "$ref": "#/definitions/models.FirearmModel"
                             }
                         }
                     }
@@ -390,7 +65,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            "$ref": "#/definitions/models.FirearmModel"
                         }
                     }
                 ],
@@ -398,7 +73,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            "$ref": "#/definitions/models.FirearmModel"
                         }
                     },
                     "400": {
@@ -439,7 +114,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            "$ref": "#/definitions/models.FirearmModel"
                         }
                     },
                     "404": {
@@ -479,7 +154,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            "$ref": "#/definitions/models.FirearmModel"
                         }
                     }
                 ],
@@ -487,7 +162,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
+                            "$ref": "#/definitions/models.FirearmModel"
                         }
                     },
                     "400": {
@@ -547,6 +222,371 @@
                 }
             }
         },
+        "/firearm-models/{id}/categories": {
+            "get": {
+                "description": "Retrieves all part categories associated with a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Get part categories for a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by required status (true=required, false=optional, omit=both)",
+                        "name": "required",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of part categories with required status",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid firearm model ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Firearm model not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/firearm-models/{id}/categories-hierarchy": {
+            "get": {
+                "description": "Retrieves all part categories associated with a specific firearm model in a hierarchical structure",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Get hierarchical categories for a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hierarchical array of part categories with required status",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.CategoryWithRequiredStatusHierarchy"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid firearm model ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Firearm model not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/firearm-models/{id}/categories/{category_id}": {
+            "put": {
+                "description": "Updates the relationship between a firearm model and a part category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Update a firearm model-category relationship",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated relationship parameters",
+                        "name": "relationship",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Relationship not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Associates a part category with a firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Add a category to a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Relationship parameters",
+                        "name": "relationship",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Firearm model or part category not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Relationship already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes the association between a part category and a firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Remove a category from a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Relationship not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/listings": {
             "get": {
                 "description": "Get a list of all product listings in the database",
@@ -566,7 +606,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                                "$ref": "#/definitions/models.ProductListing"
                             }
                         }
                     }
@@ -591,7 +631,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     }
                 ],
@@ -599,7 +639,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     },
                     "400": {
@@ -642,7 +682,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                                "$ref": "#/definitions/models.ProductListing"
                             }
                         }
                     }
@@ -677,7 +717,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                                "$ref": "#/definitions/models.ProductListing"
                             }
                         }
                     }
@@ -712,7 +752,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                                "$ref": "#/definitions/models.ProductListing"
                             }
                         }
                     }
@@ -745,7 +785,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     },
                     "404": {
@@ -785,7 +825,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     }
                 ],
@@ -793,7 +833,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     },
                     "400": {
@@ -888,7 +928,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.ProductListing"
+                            "$ref": "#/definitions/models.ProductListing"
                         }
                     },
                     "400": {
@@ -902,6 +942,808 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/part-categories": {
+            "get": {
+                "description": "Retrieves all part categories with optional parent-child relationships",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Part Categories"
+                ],
+                "summary": "Get all part categories",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Whether to include child categories recursively",
+                        "name": "recursive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.PartCategory"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new part category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Part Categories"
+                ],
+                "summary": "Create a new part category",
+                "parameters": [
+                    {
+                        "description": "Part Category object",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/part-categories/firearm/{id}": {
+            "get": {
+                "description": "Retrieves all part categories associated with a specific firearm model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Firearm Models",
+                    "Part Categories"
+                ],
+                "summary": "Get part categories for a firearm model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Firearm Model ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by required status (true=required, false=optional, omit=both)",
+                        "name": "required",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of part categories with required status",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid firearm model ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Firearm model not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/part-categories/{id}": {
+            "get": {
+                "description": "Retrieves a single part category by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Part Categories"
+                ],
+                "summary": "Get part category by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates an existing part category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Part Categories"
+                ],
+                "summary": "Update a part category",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated Part Category object",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a part category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Part Categories"
+                ],
+                "summary": "Delete a part category",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/part-hierarchy": {
+            "get": {
+                "description": "Get a hierarchical view of part categories",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get part hierarchy",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.PartItem"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parts": {
+            "get": {
+                "description": "Get all parts with optional filtering by category, subcategory, or category_id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get all parts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by category name",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by subcategory name",
+                        "name": "subcategory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by part category ID (new schema)",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by prebuilt status",
+                        "name": "is_prebuilt",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Part"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new part in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Create a part",
+                "parameters": [
+                    {
+                        "description": "Part object to create",
+                        "name": "part",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Part"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Part"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parts/category/{category}": {
+            "get": {
+                "description": "Get all parts in a specific category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get parts by category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category name",
+                        "name": "category",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Part"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parts/compatible-models": {
+            "get": {
+                "description": "Get a list of unique firearm models that parts are compatible with",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get compatible firearm models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parts/{id}": {
+            "get": {
+                "description": "Get a specific part by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get part by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Part"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Update a part",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated part object",
+                        "name": "part",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Part"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Part"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Delete a part",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parts/{id}/compatible": {
+            "get": {
+                "description": "Get all parts compatible with a specific part",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parts",
+                    "Compatibility"
+                ],
+                "summary": "Get compatible parts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Part ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Part"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -931,7 +1773,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                                "$ref": "#/definitions/models.PrebuiltFirearm"
                             }
                         }
                     }
@@ -956,7 +1798,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     }
                 ],
@@ -964,7 +1806,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     },
                     "400": {
@@ -1007,7 +1849,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                                "$ref": "#/definitions/models.PrebuiltFirearm"
                             }
                         }
                     }
@@ -1040,7 +1882,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     },
                     "404": {
@@ -1080,7 +1922,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     }
                 ],
@@ -1088,7 +1930,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     },
                     "400": {
@@ -1167,7 +2009,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                                "$ref": "#/definitions/models.Seller"
                             }
                         }
                     }
@@ -1192,7 +2034,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     }
                 ],
@@ -1200,7 +2042,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     },
                     "400": {
@@ -1241,7 +2083,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     },
                     "404": {
@@ -1281,7 +2123,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     }
                 ],
@@ -1289,7 +2131,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     },
                     "400": {
@@ -1349,9 +2191,9 @@
                 }
             }
         },
-        "/sellers/{id}/status": {
+        "/sellers/{id}/affiliate-status": {
             "patch": {
-                "description": "Update the status of a specific seller",
+                "description": "Update the affiliate status of a specific seller",
                 "consumes": [
                     "application/json"
                 ],
@@ -1361,7 +2203,7 @@
                 "tags": [
                     "Sellers"
                 ],
-                "summary": "Update seller status",
+                "summary": "Update seller affiliate status",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1371,7 +2213,7 @@
                         "required": true
                     },
                     {
-                        "description": "Status Update Info",
+                        "description": "Affiliate Status Update Info",
                         "name": "status",
                         "in": "body",
                         "required": true,
@@ -1384,7 +2226,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     },
                     "400": {
@@ -1427,7 +2269,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                                "$ref": "#/definitions/models.UserSuggestion"
                             }
                         }
                     }
@@ -1452,7 +2294,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     }
                 ],
@@ -1460,7 +2302,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     },
                     "400": {
@@ -1508,7 +2350,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                                "$ref": "#/definitions/models.UserSuggestion"
                             }
                         }
                     }
@@ -1541,7 +2383,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     },
                     "404": {
@@ -1581,7 +2423,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     }
                 ],
@@ -1589,7 +2431,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     },
                     "400": {
@@ -1684,7 +2526,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/sauron-backend_internal_models.UserSuggestion"
+                            "$ref": "#/definitions/models.UserSuggestion"
                         }
                     },
                     "400": {
@@ -1710,67 +2552,50 @@
         }
     },
     "definitions": {
-        "sauron-backend_internal_models.CompatibilityRule": {
-            "description": "Rules defining compatibility between different parts and firearm models",
+        "handlers.CategoryWithRequiredStatusHierarchy": {
             "type": "object",
             "properties": {
-                "compatible_with_part": {
-                    "description": "Compatible part in the relationship",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
-                        }
-                    ]
-                },
-                "compatible_with_part_id": {
-                    "description": "ID of the part that is compatible with the primary part",
-                    "type": "integer",
-                    "example": 2
-                },
-                "constraint_type": {
-                    "description": "Type of compatibility constraint (e.g., \"required\", \"optional\", \"incompatible\")",
-                    "type": "string",
-                    "example": "required"
+                "child_categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.CategoryWithRequiredStatusHierarchy"
+                    }
                 },
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
                 },
-                "details": {
-                    "description": "Additional details about the compatibility rule\n@Description JSON object containing specific compatibility details",
+                "description": {
+                    "description": "Description of the category",
                     "type": "string",
-                    "example": "{\"notes\":\"Must use correct gas system length\",\"caliber_specific\":true}"
-                },
-                "firearm_model": {
-                    "description": "Related firearm model",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
-                        }
-                    ]
-                },
-                "firearm_model_id": {
-                    "description": "ID of the firearm model this rule applies to",
-                    "type": "integer",
-                    "example": 1
+                    "example": "Core upper receiver components"
                 },
                 "id": {
-                    "description": "Unique identifier for the compatibility rule",
+                    "description": "Unique identifier for the category",
                     "type": "integer",
                     "example": 1
                 },
-                "part": {
-                    "description": "Primary part in the compatibility relationship",
+                "is_required": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "Name of the category",
+                    "type": "string",
+                    "example": "Upper Assembly"
+                },
+                "parent_category": {
+                    "description": "Parent category (self-referential relationship)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
+                            "$ref": "#/definitions/models.PartCategory"
                         }
                     ]
                 },
-                "part_id": {
-                    "description": "ID of the primary part in this compatibility rule",
+                "parent_category_id": {
+                    "description": "Parent category ID for hierarchical relationships (null for top-level categories)",
                     "type": "integer",
-                    "example": 1
+                    "example": 0
                 },
                 "updated_at": {
                     "description": "Last update timestamp",
@@ -1778,32 +2603,60 @@
                 }
             }
         },
-        "sauron-backend_internal_models.FirearmModel": {
-            "description": "Firearm model information including required and compatible parts",
+        "handlers.PartItem": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.PartItem"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "upper-receiver"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Upper Receiver"
+                }
+            }
+        },
+        "models.FirearmModel": {
+            "description": "Firearm model information including hierarchical parts structure",
             "type": "object",
             "properties": {
                 "category": {
                     "description": "Category of the firearm",
                     "type": "string",
-                    "example": "Assault Rifles"
-                },
-                "compatible_parts": {
-                    "description": "List of compatible parts for this firearm model\n@Description JSON array of compatible part categories",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "['5.56 NATO'",
-                        " '.223 Remington']"
-                    ]
+                    "example": "Rifle"
                 },
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
                 },
+                "description": {
+                    "description": "Description of the firearm model",
+                    "type": "string",
+                    "example": "A high-quality semi-automatic modular rifle platform."
+                },
                 "id": {
                     "description": "Unique identifier for the firearm model",
+                    "type": "integer",
+                    "example": 1
+                },
+                "images": {
+                    "description": "Image URLs for the firearm model",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"https://example.com/images/firearms/AR-15.jpg\"]"
+                    ]
+                },
+                "manufacturer_id": {
+                    "description": "Reference to the manufacturer",
                     "type": "integer",
                     "example": 1
                 },
@@ -1812,22 +2665,27 @@
                     "type": "string",
                     "example": "AR-15"
                 },
-                "required_parts": {
-                    "description": "List of required parts for this firearm model\n@Description JSON array of required part names",
+                "part_categories": {
+                    "description": "Related part categories through FirearmModelPartCategory",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "['Upper Receiver'",
-                        " 'Lower Receiver'",
-                        " 'Bolt Carrier Group']"
-                    ]
+                        "$ref": "#/definitions/models.PartCategory"
+                    }
+                },
+                "price_range": {
+                    "description": "Price range for the firearm model",
+                    "type": "string",
+                    "example": "$765 - $1569"
+                },
+                "specifications": {
+                    "description": "Specifications of the firearm",
+                    "type": "string",
+                    "example": "{\"weight\": \"6.5 lbs\", \"caliber\": \"5.56x45mm NATO\"}"
                 },
                 "subcategory": {
                     "description": "Subcategory of the firearm",
                     "type": "string",
-                    "example": "Semi-Automatic"
+                    "example": "Assault"
                 },
                 "updated_at": {
                     "description": "Last update timestamp",
@@ -1836,62 +2694,119 @@
                 "variant": {
                     "description": "Variant of the firearm model",
                     "type": "string",
-                    "example": "M4"
+                    "example": ""
                 }
             }
         },
-        "sauron-backend_internal_models.Part": {
-            "description": "Detailed information about a firearm part including compatibility and restrictions",
+        "models.Part": {
+            "description": "Detailed information about a firearm part including compatibility and specifications",
             "type": "object",
             "properties": {
-                "category": {
-                    "description": "Main category of the part",
-                    "type": "string",
-                    "example": "Upper Assembly"
-                },
-                "compatibility": {
-                    "description": "Compatibility information with other parts and models\n@Description JSON object containing compatibility rules",
-                    "type": "string",
-                    "example": "{\"firearm_models\":[\"AR-15\",\"M4\"],\"calibers\":[\"5.56 NATO\"]}"
-                },
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
+                },
+                "description": {
+                    "description": "Description of the part",
+                    "type": "string",
+                    "example": "A 30-round 5.56x45 NATO polymer magazine for AR-15 rifles."
+                },
+                "dimensions": {
+                    "description": "Dimensions of the part",
+                    "type": "string",
+                    "example": "5 x 3 x 2 in"
                 },
                 "id": {
                     "description": "Unique identifier for the part",
                     "type": "integer",
                     "example": 1
                 },
+                "images": {
+                    "description": "Image URLs for the part",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg\"]"
+                    ]
+                },
                 "is_prebuilt": {
                     "description": "Whether this is a pre-built component",
                     "type": "boolean",
                     "example": false
                 },
-                "legal_restrictions": {
-                    "description": "Legal restrictions or requirements for this part\n@Description JSON object containing legal restriction details",
-                    "type": "string",
-                    "example": "{\"restricted_states\":[\"CA\",\"NY\"],\"license_required\":true}"
+                "manufacturer_id": {
+                    "description": "Reference to the manufacturer",
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
                     "description": "Name of the part",
                     "type": "string",
-                    "example": "Bolt Carrier Group"
+                    "example": "PMAG 30 AR/M4 GEN M3"
                 },
-                "required_sub_components": {
-                    "description": "List of required sub-components for this part\n@Description JSON array of required sub-component names",
-                    "type": "string",
-                    "example": "[\"bolt\",\"carrier\",\"firing pin\"]"
+                "part_category": {
+                    "$ref": "#/definitions/models.PartCategory"
                 },
-                "sub_components": {
-                    "description": "List of sub-components that make up this part\n@Description JSON array of sub-component details",
-                    "type": "string",
-                    "example": "{\"pins\":[\"firing pin\",\"cam pin\"],\"springs\":[\"extractor spring\"]}"
+                "part_category_id": {
+                    "description": "Reference to the part category",
+                    "type": "integer",
+                    "example": 18
                 },
-                "subcategory": {
-                    "description": "Subcategory for more specific classification",
+                "updated_at": {
+                    "description": "Last update timestamp",
+                    "type": "string"
+                },
+                "weight": {
+                    "description": "Weight of the part in pounds",
+                    "type": "number",
+                    "example": 0.54
+                }
+            }
+        },
+        "models.PartCategory": {
+            "description": "Hierarchical structure of part categories",
+            "type": "object",
+            "properties": {
+                "child_categories": {
+                    "description": "Child categories (reverse relationship)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PartCategory"
+                    }
+                },
+                "created_at": {
+                    "description": "Creation timestamp",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description of the category",
                     "type": "string",
-                    "example": "Bolt Carrier Group"
+                    "example": "Core upper receiver components"
+                },
+                "id": {
+                    "description": "Unique identifier for the category",
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "description": "Name of the category",
+                    "type": "string",
+                    "example": "Upper Assembly"
+                },
+                "parent_category": {
+                    "description": "Parent category (self-referential relationship)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.PartCategory"
+                        }
+                    ]
+                },
+                "parent_category_id": {
+                    "description": "Parent category ID for hierarchical relationships (null for top-level categories)",
+                    "type": "integer",
+                    "example": 0
                 },
                 "updated_at": {
                     "description": "Last update timestamp",
@@ -1899,29 +2814,31 @@
                 }
             }
         },
-        "sauron-backend_internal_models.PrebuiltFirearm": {
-            "description": "Complete firearm configuration with specific components",
+        "models.PrebuiltFirearm": {
+            "description": "Complete firearm configuration with hierarchical parts structure",
             "type": "object",
             "properties": {
-                "components": {
-                    "description": "List of components included in this build\n@Description JSON object containing component details and specifications",
+                "availability": {
+                    "description": "Availability status",
                     "type": "string",
-                    "example": "{\"upper_receiver\":\"BCM Complete Upper\",\"lower_receiver\":\"Aero M4E1\",\"barrel\":\"16 inch 5.56 NATO\"}"
+                    "example": "in_stock"
+                },
+                "compatible_parts": {
+                    "description": "Compatible accessories specifically for this prebuilt configuration",
+                    "type": "string",
+                    "example": "{\"Magazines and Feeding Devices\": {\"Detachable Box Magazine\": {\"id\": 12}}}"
                 },
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
                 },
-                "firearm_model": {
-                    "description": "Base firearm model",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/sauron-backend_internal_models.FirearmModel"
-                        }
-                    ]
+                "description": {
+                    "description": "Description of the prebuilt firearm",
+                    "type": "string",
+                    "example": "A prebuilt M4 variant with a 14.5-inch barrel."
                 },
                 "firearm_model_id": {
-                    "description": "ID of the base firearm model",
+                    "description": "Reference to the base firearm model",
                     "type": "integer",
                     "example": 1
                 },
@@ -1930,10 +2847,35 @@
                     "type": "integer",
                     "example": 1
                 },
+                "images": {
+                    "description": "Image URLs for the prebuilt firearm",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"https://example.com/images/firearms/AR-15_prebuilt.jpg\"]"
+                    ]
+                },
                 "name": {
                     "description": "Name of the prebuilt configuration",
                     "type": "string",
-                    "example": "Custom AR-15 Build"
+                    "example": "Colt M4 Carbine"
+                },
+                "parts": {
+                    "description": "Hierarchical structure of actual parts used in this prebuilt with IDs",
+                    "type": "string",
+                    "example": "{\"Upper Assembly\": {\"id\": 1, \"sub_parts\": {\"Bolt Carrier Group\": {\"id\": 5}}}}"
+                },
+                "price": {
+                    "description": "Base price of the prebuilt firearm",
+                    "type": "number",
+                    "example": 999.99
+                },
+                "specifications": {
+                    "description": "Specifications specific to this prebuilt configuration",
+                    "type": "string",
+                    "example": "{\"weight\": \"6.5 lbs\", \"caliber\": \"5.56x45mm NATO\"}"
                 },
                 "updated_at": {
                     "description": "Last update timestamp",
@@ -1941,7 +2883,7 @@
                 }
             }
         },
-        "sauron-backend_internal_models.ProductListing": {
+        "models.ProductListing": {
             "description": "Product listing information including pricing and availability",
             "type": "object",
             "properties": {
@@ -1977,7 +2919,7 @@
                     "description": "Related part information if this is a part listing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Part"
+                            "$ref": "#/definitions/models.Part"
                         }
                     ]
                 },
@@ -1990,7 +2932,7 @@
                     "description": "Related prebuilt firearm information if this is a prebuilt listing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/sauron-backend_internal_models.PrebuiltFirearm"
+                            "$ref": "#/definitions/models.PrebuiltFirearm"
                         }
                     ]
                 },
@@ -2008,7 +2950,7 @@
                     "description": "Related seller information",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/sauron-backend_internal_models.Seller"
+                            "$ref": "#/definitions/models.Seller"
                         }
                     ]
                 },
@@ -2038,62 +2980,72 @@
                 }
             }
         },
-        "sauron-backend_internal_models.Seller": {
-            "description": "Information about sellers and their API integrations",
+        "models.Seller": {
+            "description": "Information about sellers who offer parts and prebuilt firearms",
             "type": "object",
             "properties": {
-                "api_endpoint": {
-                    "description": "API endpoint for the seller's integration",
+                "affiliate_link_template": {
+                    "description": "Template for creating affiliate links (NULL if not affiliate)",
                     "type": "string",
-                    "example": "https://api.brownells.com/v1"
+                    "example": "https://www.brownells.com/?aff=gunguru_{product_id}"
                 },
-                "api_key": {
-                    "description": "Encrypted API key for authentication",
+                "contact_info": {
+                    "description": "Contact information for the seller",
                     "type": "string",
-                    "example": "encrypted_api_key_here"
+                    "example": "{\"phone\": \"800-741-0015\", \"email\": \"support@brownells.com\"}"
                 },
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
+                },
+                "description": {
+                    "description": "Description of the seller",
+                    "type": "string",
+                    "example": "A trusted retailer of firearm parts and accessories."
                 },
                 "id": {
                     "description": "Unique identifier for the seller",
                     "type": "integer",
                     "example": 1
                 },
+                "is_affiliate": {
+                    "description": "Whether the seller is an affiliate partner",
+                    "type": "boolean",
+                    "example": false
+                },
+                "logo_url": {
+                    "description": "URL to the seller's logo",
+                    "type": "string",
+                    "example": "https://example.com/brownells_logo.png"
+                },
                 "name": {
                     "description": "Name of the seller",
                     "type": "string",
                     "example": "Brownells"
                 },
-                "settings": {
-                    "description": "Additional seller-specific settings\n@Description JSON object containing seller configuration",
-                    "type": "string",
-                    "example": "{\"api_version\":\"v1\",\"update_frequency\":\"daily\",\"preferred_currency\":\"USD\"}"
-                },
-                "status": {
-                    "description": "Current status of the seller (active, inactive, suspended)",
-                    "type": "string",
-                    "example": "active"
-                },
                 "updated_at": {
                     "description": "Last update timestamp",
                     "type": "string"
                 },
-                "website": {
+                "website_url": {
                     "description": "Website URL of the seller",
                     "type": "string",
                     "example": "https://www.brownells.com"
                 }
             }
         },
-        "sauron-backend_internal_models.UserSuggestion": {
-            "description": "User suggestions for new content or improvements",
+        "models.UserSuggestion": {
+            "description": "User suggestions for new models, parts, or configurations",
             "type": "object",
             "properties": {
                 "created_at": {
                     "description": "Creation timestamp",
                     "type": "string"
+                },
+                "description": {
+                    "description": "Description of the suggestion",
+                    "type": "string",
+                    "example": "A suggestion for a long-range AR-10 configuration."
                 },
                 "id": {
                     "description": "Unique identifier for the suggestion",
@@ -2101,9 +3053,9 @@
                     "example": 1
                 },
                 "model_name": {
-                    "description": "Name of the suggested model or part",
+                    "description": "Name of the suggested model or configuration",
                     "type": "string",
-                    "example": "New AR-15 Variant"
+                    "example": "Custom AR-10 Build"
                 },
                 "status": {
                     "description": "Current status of the suggestion (pending, approved, rejected)",
@@ -2111,9 +3063,9 @@
                     "example": "pending"
                 },
                 "suggested_parts": {
-                    "description": "List of suggested parts or modifications\n@Description JSON object containing detailed suggestions",
+                    "description": "List of suggested parts or modifications",
                     "type": "string",
-                    "example": "{\"parts\":[\"Custom Handguard\",\"Modified BCG\"],\"modifications\":[\"Enhanced Feed Ramps\"]}"
+                    "example": "{\"Barrel\": {\"name\": \"20in 308 Barrel\"}, \"Stock\": {\"name\": \"Magpul PRS\"}}"
                 },
                 "updated_at": {
                     "description": "Last update timestamp",

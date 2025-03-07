@@ -9,15 +9,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// CategoryWithRequiredStatus is a response type for part categories with required status
+type CategoryWithRequiredStatus struct {
+	models.PartCategory
+	IsRequired bool `json:"is_required" example:"true"`
+}
+
+// CategoryWithRequiredStatusHierarchy is a hierarchical response type for part categories with required status
+type CategoryWithRequiredStatusHierarchy struct {
+	models.PartCategory
+	IsRequired      bool                                  `json:"is_required" example:"true"`
+	ChildCategories []CategoryWithRequiredStatusHierarchy `json:"child_categories,omitempty"`
+}
+
 // @Summary Get part categories for a firearm model
 // @Description Retrieves all part categories associated with a specific firearm model
-// @Tags Firearm Models
+// @Tags Firearm Models,Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Firearm Model ID"
 // @Param required query bool false "Filter by required status (true=required, false=optional, omit=both)"
-// @Success 200 {array} models.PartCategory
+// @Success 200 {array} object "Array of part categories with required status"
+// @Failure 400 {object} map[string]string "Invalid firearm model ID"
+// @Failure 404 {object} map[string]string "Firearm model not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /firearm-models/{id}/categories [get]
+// @Router /part-categories/firearm/{id} [get]
 func GetFirearmModelCategories(c *gin.Context) {
 	modelID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -40,11 +57,6 @@ func GetFirearmModelCategories(c *gin.Context) {
 	}
 
 	// Get categories with relationship data
-	type CategoryWithRequiredStatus struct {
-		models.PartCategory
-		IsRequired bool `json:"is_required"`
-	}
-
 	var results []CategoryWithRequiredStatus
 
 	query := db.DB.Table("part_categories").
@@ -64,15 +76,19 @@ func GetFirearmModelCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-// @Summary Add part category to firearm model
+// @Summary Add a category to a firearm model
 // @Description Associates a part category with a firearm model
-// @Tags Firearm Models
+// @Tags Firearm Models,Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Firearm Model ID"
 // @Param category_id path int true "Part Category ID"
-// @Param relation body object true "Relationship details"
-// @Success 201 {object} models.FirearmModelPartCategory
+// @Param relationship body object true "Relationship parameters"
+// @Success 201 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 404 {object} map[string]string "Firearm model or part category not found"
+// @Failure 409 {object} map[string]string "Relationship already exists"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /firearm-models/{id}/categories/{category_id} [post]
 func AddCategoryToFirearmModel(c *gin.Context) {
 	modelID, err := strconv.Atoi(c.Param("id"))
@@ -136,15 +152,18 @@ func AddCategoryToFirearmModel(c *gin.Context) {
 	c.JSON(http.StatusCreated, relation)
 }
 
-// @Summary Update firearm model-category relationship
+// @Summary Update a firearm model-category relationship
 // @Description Updates the relationship between a firearm model and a part category
-// @Tags Firearm Models
+// @Tags Firearm Models,Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Firearm Model ID"
 // @Param category_id path int true "Part Category ID"
-// @Param relation body object true "Relationship details"
-// @Success 200 {object} models.FirearmModelPartCategory
+// @Param relationship body object true "Updated relationship parameters"
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 404 {object} map[string]string "Relationship not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /firearm-models/{id}/categories/{category_id} [put]
 func UpdateFirearmModelCategoryRelation(c *gin.Context) {
 	modelID, err := strconv.Atoi(c.Param("id"))
@@ -188,14 +207,17 @@ func UpdateFirearmModelCategoryRelation(c *gin.Context) {
 	c.JSON(http.StatusOK, relation)
 }
 
-// @Summary Remove part category from firearm model
+// @Summary Remove a category from a firearm model
 // @Description Removes the association between a part category and a firearm model
-// @Tags Firearm Models
+// @Tags Firearm Models,Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Firearm Model ID"
 // @Param category_id path int true "Part Category ID"
-// @Success 204 "No Content"
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 404 {object} map[string]string "Relationship not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /firearm-models/{id}/categories/{category_id} [delete]
 func RemoveCategoryFromFirearmModel(c *gin.Context) {
 	modelID, err := strconv.Atoi(c.Param("id"))
@@ -226,14 +248,16 @@ func RemoveCategoryFromFirearmModel(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// @Summary Get hierarchical part categories for a firearm model
-// @Description Retrieves a complete hierarchical structure of part categories for a specific firearm model
-// @Tags Firearm Models
+// @Summary Get hierarchical categories for a firearm model
+// @Description Retrieves all part categories associated with a specific firearm model in a hierarchical structure
+// @Tags Firearm Models,Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Firearm Model ID"
-// @Param required query bool false "Filter by required status (true=required, false=optional, omit=both)"
-// @Success 200 {array} CategoryWithRequiredStatus
+// @Success 200 {array} CategoryWithRequiredStatusHierarchy "Hierarchical array of part categories with required status"
+// @Failure 400 {object} map[string]string "Invalid firearm model ID"
+// @Failure 404 {object} map[string]string "Firearm model not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /firearm-models/{id}/categories-hierarchy [get]
 func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 	modelID, err := strconv.Atoi(c.Param("id"))
@@ -257,12 +281,8 @@ func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 		requiredFilter = &required
 	}
 
-	// Define the response type that includes the is_required flag
-	type CategoryWithRequiredStatus struct {
-		models.PartCategory
-		IsRequired      bool                         `json:"is_required"`
-		ChildCategories []CategoryWithRequiredStatus `json:"child_categories,omitempty"`
-	}
+	// Define the response type that includes the is_required flag and child categories
+	var hierarchicalCategories []CategoryWithRequiredStatusHierarchy
 
 	// Step 1: Get all part categories assigned to this firearm model with their required status
 	var modelCategoryRelations []models.FirearmModelPartCategory
@@ -279,7 +299,7 @@ func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 	}
 
 	if len(modelCategoryRelations) == 0 {
-		c.JSON(http.StatusOK, []CategoryWithRequiredStatus{})
+		c.JSON(http.StatusOK, []CategoryWithRequiredStatusHierarchy{})
 		return
 	}
 
@@ -305,18 +325,18 @@ func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 	}
 
 	// Function to build the category hierarchy with required status
-	var buildCategoryHierarchy func(categoryID int, isRequired bool) *CategoryWithRequiredStatus
-	buildCategoryHierarchy = func(categoryID int, isRequired bool) *CategoryWithRequiredStatus {
+	var buildCategoryHierarchy func(categoryID int, isRequired bool) *CategoryWithRequiredStatusHierarchy
+	buildCategoryHierarchy = func(categoryID int, isRequired bool) *CategoryWithRequiredStatusHierarchy {
 		category, exists := categoryByID[categoryID]
 		if !exists {
 			return nil
 		}
 
 		// Create the response structure with the required status
-		result := CategoryWithRequiredStatus{
+		result := CategoryWithRequiredStatusHierarchy{
 			PartCategory:    category,
 			IsRequired:      isRequired,
-			ChildCategories: []CategoryWithRequiredStatus{},
+			ChildCategories: []CategoryWithRequiredStatusHierarchy{},
 		}
 
 		// Find child categories
@@ -342,7 +362,7 @@ func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 	}
 
 	// Start with top-level categories (those without parent or with parent outside the model)
-	var result []CategoryWithRequiredStatus
+	var result []CategoryWithRequiredStatusHierarchy
 	for _, relation := range modelCategoryRelations {
 		category, exists := categoryByID[relation.PartCategoryID]
 		if !exists {
@@ -366,5 +386,6 @@ func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, result)
+	hierarchicalCategories = result
+	c.JSON(http.StatusOK, hierarchicalCategories)
 }

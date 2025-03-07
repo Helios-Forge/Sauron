@@ -16,6 +16,7 @@ import (
 // @Produce json
 // @Param recursive query bool false "Whether to include child categories recursively"
 // @Success 200 {array} models.PartCategory
+// @Failure 500 {object} map[string]string "Error message"
 // @Router /part-categories [get]
 func GetPartCategories(c *gin.Context) {
 	recursive := c.Query("recursive") == "true"
@@ -52,8 +53,10 @@ func GetPartCategories(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Part Category ID"
-// @Param recursive query bool false "Whether to include child categories recursively"
 // @Success 200 {object} models.PartCategory
+// @Failure 400 {object} map[string]string "Invalid ID format"
+// @Failure 404 {object} map[string]string "Category not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /part-categories/{id} [get]
 func GetPartCategoryByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
@@ -80,13 +83,15 @@ func GetPartCategoryByID(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
-// @Summary Create part category
+// @Summary Create a new part category
 // @Description Creates a new part category
 // @Tags Part Categories
 // @Accept json
 // @Produce json
-// @Param category body models.PartCategory true "Part Category"
+// @Param category body models.PartCategory true "Part Category object"
 // @Success 201 {object} models.PartCategory
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /part-categories [post]
 func CreatePartCategory(c *gin.Context) {
 	var category models.PartCategory
@@ -104,14 +109,17 @@ func CreatePartCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, category)
 }
 
-// @Summary Update part category
+// @Summary Update a part category
 // @Description Updates an existing part category
 // @Tags Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Part Category ID"
-// @Param category body models.PartCategory true "Part Category"
+// @Param category body models.PartCategory true "Updated Part Category object"
 // @Success 200 {object} models.PartCategory
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 404 {object} map[string]string "Category not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /part-categories/{id} [put]
 func UpdatePartCategory(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
@@ -140,13 +148,16 @@ func UpdatePartCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
-// @Summary Delete part category
+// @Summary Delete a part category
 // @Description Deletes a part category
 // @Tags Part Categories
 // @Accept json
 // @Produce json
 // @Param id path int true "Part Category ID"
-// @Success 204 "No Content"
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid ID format"
+// @Failure 404 {object} map[string]string "Category not found"
+// @Failure 500 {object} map[string]string "Server error"
 // @Router /part-categories/{id} [delete]
 func DeletePartCategory(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))

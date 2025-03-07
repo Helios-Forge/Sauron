@@ -16,16 +16,16 @@ import (
 )
 
 // @title           Sauron Backend API
-// @version         1.0
-// @description     A comprehensive API for managing firearm parts, models, and compatibility.
-// @termsOfService  http://swagger.io/terms/
+// @version         2.0
+// @description     A comprehensive API for firearms database management including parts, models, categories, product listings, and compatibility.
+// @termsOfService  https://sauron.io/terms/
 
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
+// @contact.name   Sauron API Support
+// @contact.url    https://sauron.io/support
+// @contact.email  support@sauron.io
 
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
 
 // @host      localhost:8080
 // @BasePath  /
@@ -172,8 +172,8 @@ func main() {
 
 	// Programmatically set swagger info
 	docs.SwaggerInfo.Title = "Sauron Backend API"
-	docs.SwaggerInfo.Description = "A comprehensive API for managing firearm parts, models, and compatibility."
-	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Description = "A comprehensive API for firearms database management including parts, models, categories, product listings, and compatibility."
+	docs.SwaggerInfo.Version = "2.0"
 	docs.SwaggerInfo.Host = "localhost:8080"
 	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http"}
