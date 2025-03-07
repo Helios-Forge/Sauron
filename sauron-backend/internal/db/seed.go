@@ -341,11 +341,19 @@ func SeedDatabase() {
 	log.Println("Seeding parts...")
 	seedParts()
 
-	// 5. Seed PrebuiltFirearms (depends on firearm models)
+	// 5. Seed categories and relationships
+	log.Println("Seeding categories and relationships...")
+	SeedCategoriesAndRelationships()
+
+	// 6. Seed model to category relationships (new step)
+	log.Println("Seeding model to category relationships...")
+	seedModelCategoryRelationships()
+
+	// 7. Seed PrebuiltFirearms (depends on firearm models)
 	log.Println("Seeding prebuilt firearms...")
 	seedPrebuiltFirearms()
 
-	// 6. Seed ProductListings (depends on parts and sellers)
+	// 8. Seed ProductListings (depends on parts and sellers)
 	log.Println("Seeding product listings...")
 	seedProductListings()
 
@@ -1355,4 +1363,61 @@ func getRandomAvailability() string {
 	}
 
 	return "in_stock" // Default
+}
+
+// seedModelCategoryRelationships creates relationships between firearm models and part categories
+func seedModelCategoryRelationships() {
+	log.Println("Seeding firearm model to part category relationships...")
+
+	// AR-15 model required and optional part categories
+	ar15ModelID := 1
+
+	// Define category associations for AR-15
+	ar15Categories := []struct {
+		categoryID int
+		isRequired bool
+	}{
+		{1, true},   // Lower Assembly (required)
+		{2, true},   // Upper Assembly (required)
+		{6, true},   // Lower Receiver (required)
+		{12, true},  // Upper Receiver (required)
+		{3, true},   // Grip (required)
+		{8, true},   // Trigger Assembly (required)
+		{10, true},  // Barrel (required)
+		{13, true},  // Bolt Carrier Group (required)
+		{14, true},  // Handguard/Foregrip (required)
+		{11, true},  // Gas System (required)
+		{18, true},  // Magazines (required)
+		{19, false}, // Rails and Mounting (optional)
+		{17, false}, // Miscellaneous Accessories (optional)
+	}
+
+	// Check if relationships already exist
+	for _, cat := range ar15Categories {
+		var count int64
+		DB.Model(&models.FirearmModelPartCategory{}).
+			Where("firearm_model_id = ? AND part_category_id = ?", ar15ModelID, cat.categoryID).
+			Count(&count)
+
+		if count == 0 {
+			// Create the relationship
+			relation := models.FirearmModelPartCategory{
+				FirearmModelID: ar15ModelID,
+				PartCategoryID: cat.categoryID,
+				IsRequired:     cat.isRequired,
+			}
+
+			result := DB.Create(&relation)
+			if result.Error != nil {
+				log.Printf("Error creating relationship for AR-15 and category %d: %v", cat.categoryID, result.Error)
+			} else {
+				log.Printf("Created relationship: AR-15 (ID: %d) → Category ID: %d (Required: %t)",
+					ar15ModelID, cat.categoryID, cat.isRequired)
+			}
+		} else {
+			log.Printf("Relationship already exists: AR-15 (ID: %d) → Category ID: %d", ar15ModelID, cat.categoryID)
+		}
+	}
+
+	log.Println("Firearm model to part category relationship seeding completed")
 }
