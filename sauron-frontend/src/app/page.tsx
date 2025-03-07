@@ -1,210 +1,230 @@
-"use client"
+import { MainLayout } from "@/components/layout/MainLayout";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Wrench, ShieldCheck, Zap } from "lucide-react";
 
-import React from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+export const metadata = {
+  title: "GunGuru - Custom Firearm Builder",
+  description: "Design, customize, and build your perfect firearm with GunGuru's interactive builder tool.",
+};
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <>
-      {/* HERO SECTION */}
-      <section className="bg-gradient-to-r from-indigo-800 to-purple-600 text-white py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-6xl md:text-7xl font-bold mb-4">
-            Design, Build, and Explore Firearms Your Way
-          </h1>
-          <p className="text-2xl md:text-3xl mb-8 max-w-3xl mx-auto">
-            GunGuru empowers you to customize firearms with confidence through compatibility checks, legal compliance, and community insights
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/builder">Start Building</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-white border-white" asChild>
-              <Link href="/products">Browse Products</Link>
-            </Button>
+    <MainLayout>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-b from-gray-900 to-gray-800 text-white py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+                Build Your Perfect Firearm with Confidence
+              </h1>
+              <p className="text-xl text-gray-300 mb-8">
+                GunGuru's interactive builder helps you design, customize, and build firearms with expert guidance on compatibility and legal compliance.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/builder">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Start Building <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/catalog">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    Browse Catalog
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:block bg-gray-700 rounded-lg p-8 h-96">
+              {/* Placeholder for hero image */}
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xl font-medium">
+                Interactive Builder Preview
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURED BUILDS SECTION */}
-      <section className="py-24 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Featured Builds</h2>
+      {/* Features Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Why Choose GunGuru?
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+              Our platform offers everything you need to build your perfect firearm with confidence.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Example builds - these would come from the backend later */}
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Wrench className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Interactive Builder
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Our drag-and-drop builder makes it easy to customize your firearm with real-time compatibility checks.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShieldCheck className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Legal Compliance
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Stay informed about legal requirements in your state with our built-in compliance checker.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Zap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Expert Recommendations
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Get personalized recommendations based on your preferences and intended use.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              How It Works
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+              Building your custom firearm is simple with our step-by-step process.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               {
-                title: "Precision AR-15 DMR",
-                author: "MasterBuilder",
-                image: "/mock-build1.jpg",
-                tags: ["AR-15", "DMR", "Long Range"],
-                likes: 142
+                step: "1",
+                title: "Choose Base Model",
+                description: "Select from our wide range of base firearm models to start your build."
               },
               {
-                title: "Lightweight Hiking Shotgun",
-                author: "OutdoorsExpert",
-                image: "/mock-build2.jpg",
-                tags: ["Shotgun", "Lightweight", "Tactical"],
-                likes: 98
+                step: "2",
+                title: "Customize Components",
+                description: "Add and customize components with real-time compatibility checks."
               },
               {
-                title: "Competition Glock 34",
-                author: "RaceGunPro",
-                image: "/mock-build3.jpg", 
-                tags: ["Glock", "Competition", "Custom"],
-                likes: 213
+                step: "3",
+                title: "Review & Save",
+                description: "Review your build, check legal compliance, and save your configuration."
+              },
+              {
+                step: "4",
+                title: "Order Parts",
+                description: "Order all the parts you need directly through our platform or trusted partners."
               }
-            ].map((build, index) => (
-              <Card key={index} className="overflow-hidden">
-                <div className="h-48 bg-gray-300 relative">
-                  {/* Image placeholder - would use real images later */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                    [Build Image]
-                  </div>
+            ].map((item, index) => (
+              <div key={index} className="relative">
+                <div className="w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl mb-6 mx-auto">
+                  {item.step}
                 </div>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{build.title}</CardTitle>
-                    <span className="text-sm text-muted-foreground">❤️ {build.likes}</span>
-                  </div>
-                  <CardDescription>By {build.author}</CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="flex flex-wrap gap-2">
-                    {build.tags.map(tag => (
-                      <Badge key={tag} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="ghost" size="sm" className="ml-auto" asChild>
-                    <Link href="/builds">View Details</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+                  {item.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center">
+                  {item.description}
+                </p>
+                {index < 3 && (
+                  <div className="hidden md:block absolute top-6 left-1/2 w-full h-0.5 bg-blue-200 dark:bg-blue-700"></div>
+                )}
+              </div>
             ))}
           </div>
-          <div className="text-center mt-12">
-            <Button variant="outline" asChild>
-              <Link href="/builds">View All Builds</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Key Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="shadow-md border">
-              <CardHeader>
-                <CardTitle className="text-xl">Interactive Builder</CardTitle>
-                <CardDescription>
-                  Design custom firearms with real-time compatibility checks
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>
-                  Our hierarchical component system lets you select parts with confidence, 
-                  ensuring every piece works together perfectly. View your creation in 
-                  real-time as you build.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="ghost" size="sm" className="ml-auto" asChild>
-                  <Link href="/builder">Try the Builder</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="shadow-md border">
-              <CardHeader>
-                <CardTitle className="text-xl">Legal Compliance</CardTitle>
-                <CardDescription>
-                  Stay informed about firearm laws in your state
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>
-                  Select your state to automatically check your build against local regulations.
-                  Get real-time warnings about magazine capacity, barrel length, and other 
-                  restricted features.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="ghost" size="sm" className="ml-auto" asChild>
-                  <Link href="/laws">Check Laws</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="shadow-md border">
-              <CardHeader>
-                <CardTitle className="text-xl">Price Comparisons</CardTitle>
-                <CardDescription>
-                  Find the best deals on parts and accessories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>
-                  Compare prices across multiple vendors for every component. 
-                  Track price history and get alerts when items go on sale or 
-                  come back in stock.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="ghost" size="sm" className="ml-auto" asChild>
-                  <Link href="/products">Browse Products</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* COMMUNITY SECTION */}
-      <section className="py-24 bg-gradient-to-r from-purple-600 to-indigo-800 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-6">Join Our Community</h2>
-          <p className="mb-8 text-xl max-w-2xl mx-auto">
-            Share your builds, learn from experts, and connect with fellow firearm enthusiasts
+      {/* CTA Section */}
+      <section className="py-20 bg-blue-600 dark:bg-blue-700 text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to Build Your Perfect Firearm?</h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            Join thousands of firearm enthusiasts who trust GunGuru for their custom builds.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" asChild>
-              <Link href="/guides">Browse Guides</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-white border-white" asChild>
-              <Link href="/forums">Enter Forums</Link>
-            </Button>
+            <Link href="/builder">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                Start Building Now
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent border-white text-white hover:bg-white hover:text-blue-600">
+                Create Account
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* FOOTER/ABOUT SECTION */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">About GunGuru</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            GunGuru is your ultimate free platform for firearm customization and education. 
-            We provide interactive tools, accurate information, and a supportive community
-            to help you build and understand firearms with confidence.
-          </p>
-          <Button variant="ghost" asChild>
-            <Link href="/login">Create an Account</Link>
-          </Button>
+      {/* Testimonials Section */}
+      <section className="py-20 bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              What Our Users Say
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+              Hear from firearm enthusiasts who have built their perfect firearms with GunGuru.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "GunGuru made building my first AR-15 a breeze. The compatibility checker saved me from making costly mistakes.",
+                author: "Michael T.",
+                role: "First-time Builder"
+              },
+              {
+                quote: "As a gunsmith, I recommend GunGuru to all my clients. It helps them visualize their build before committing.",
+                author: "Sarah J.",
+                role: "Professional Gunsmith"
+              },
+              {
+                quote: "The legal compliance feature is a game-changer. I can confidently build knowing my configuration is legal in my state.",
+                author: "Robert K.",
+                role: "Firearm Enthusiast"
+              }
+            ].map((testimonial, index) => (
+              <div key={index} className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg">
+                <div className="flex items-center mb-4">
+                  <div className="text-yellow-400 flex">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white">{testimonial.author}</p>
+                  <p className="text-gray-500 dark:text-gray-500 text-sm">{testimonial.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
-    </>
-  )
-} 
+    </MainLayout>
+  );
+}

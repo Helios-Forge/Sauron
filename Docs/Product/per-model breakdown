@@ -1,0 +1,588 @@
+# Per-Model Parts Breakdown for GunGuru
+
+This document maps each gun model to its specific part categories, ensuring unique requirements are captured for customization. Models are grouped by category and subcategory, with required and optional part categories listed.
+
+---
+
+## Assault Rifles
+
+### AK-47
+- **Required Parts:**
+  - Receiver Cover
+  - Gas Tube/Piston System
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### AR-15
+- **Required Parts:**
+  - Upper Assembly (Bolt Carrier Group, Barrel, Handguard/Foregrip, Upper Receiver, Gas System)
+  - Lower Assembly (Lower Receiver, Trigger Assembly, Fire Control Group, Magazine Release, Bolt Catch, Buffer System, Pistol Grip, Stock)
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### M16
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### M4 Carbine
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### FN SCAR-L
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### FN SCAR-H
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### Steyr AUG
+- **Required Parts:**
+  - Bullpup Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### HK G36
+- **Required Parts:**
+  - Polymer Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### HK416
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### SIG Sauer MCX
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+### Tavor TAR-21
+- **Required Parts:**
+  - Bullpup Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### Galil ACE
+- **Required Parts:** Same as AK-47
+- **Optional Parts:** Same as AK-47
+
+---
+
+## Rifles
+
+### Bolt-Action Rifles
+
+#### Remington 700
+- **Required Parts:**
+  - Barrel
+  - Stock
+  - Trigger Assembly
+  - Bolt Assembly (Bolt Body, Bolt Handle, Bolt Knob, Bolt Sleeve, Firing Pin Assembly)
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Winchester Model 70
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+#### Ruger American Rifle
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+#### Savage 110
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+#### Tikka T3x
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+#### Mauser M98
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+#### Mosin-Nagant M91/30
+- **Required Parts:** Same as Remington 700
+- **Optional Parts:** Same as Remington 700
+
+### Semi-Auto Rifles
+
+#### AR-10
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+#### Ruger Mini-14
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+  - Gas System
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+#### SKS
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+  - Gas System
+  - Fixed Magazine
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### FN FAL
+- **Required Parts:** Same as AR-15
+- **Optional Parts:** Same as AR-15
+
+#### HK G3
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Browning BAR
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+### Lever-Action Rifles
+
+#### Winchester 1894
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Lever
+  - Stock
+  - Trigger Assembly
+  - Magazine Tube
+- **Optional Parts:**
+  - Sights and Optics
+  - Miscellaneous Accessories
+
+#### Marlin 336
+- **Required Parts:** Same as Winchester 1894
+- **Optional Parts:** Same as Winchester 1894
+
+#### Henry Golden Boy
+- **Required Parts:** Same as Winchester 1894
+- **Optional Parts:** Same as Winchester 1894
+
+#### Winchester 1873
+- **Required Parts:** Same as Winchester 1894
+- **Optional Parts:** Same as Winchester 1894
+
+#### Marlin 1895
+- **Required Parts:** Same as Winchester 1894
+- **Optional Parts:** Same as Winchester 1894
+
+### Marksman Rifles
+
+#### M14
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazine
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### SVD Dragunov
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Optic Mounts
+  - Magazine
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### PSL
+- **Required Parts:** Same as SVD Dragunov
+- **Optional Parts:** Same as SVD Dragunov
+
+#### HK PSG1
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazine
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Barrett M82
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazine
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+---
+
+## Pistols
+
+### Semi-Auto Pistols
+
+#### Glock 17
+- **Required Parts:**
+  - Frame and Slide (Frame, Slide, Barrel)
+  - Trigger Assembly
+- **Optional Parts:**
+  - Fire Control Group
+  - Magazines and Feeding Devices
+  - Sights and Optics
+  - Grips and Ergonomics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Glock 19
+- **Required Parts:** Same as Glock 17 (compact design)
+- **Optional Parts:** Same as Glock 17
+
+#### Colt M1911
+- **Required Parts:**
+  - Frame and Slide (Frame, Slide, Barrel)
+  - Trigger Assembly
+- **Optional Parts:**
+  - Fire Control Group
+  - Magazines and Feeding Devices
+  - Sights and Optics
+  - Grips and Ergonomics
+  - Muzzle Devices and Barrel Accessories
+  - Miscellaneous Accessories
+
+#### SIG Sauer P226
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+#### SIG Sauer P320
+- **Required Parts:** Same as Glock 17 (modular frame)
+- **Optional Parts:** Same as Glock 17
+
+#### Beretta 92FS
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+#### HK VP9
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+#### CZ 75
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+#### Smith & Wesson M&P
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+#### Walther PPQ
+- **Required Parts:** Same as Glock 17
+- **Optional Parts:** Same as Glock 17
+
+### Revolvers
+
+#### Colt Single Action Army
+- **Required Parts:**
+  - Frame
+  - Cylinder
+  - Barrel
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Grips
+  - Speed Loaders
+  - Holsters
+  - Cleaning and Maintenance
+
+#### Colt Python
+- **Required Parts:** Same as Colt Single Action Army
+- **Optional Parts:** Same as Colt Single Action Army
+
+#### Smith & Wesson Model 29
+- **Required Parts:** Same as Colt Single Action Army
+- **Optional Parts:** Same as Colt Single Action Army
+
+#### Smith & Wesson Model 686
+- **Required Parts:** Same as Colt Single Action Army
+- **Optional Parts:** Same as Colt Single Action Army
+
+#### Ruger GP100
+- **Required Parts:** Same as Colt Single Action Army
+- **Optional Parts:** Same as Colt Single Action Army
+
+#### Taurus Judge
+- **Required Parts:** Same as Colt Single Action Army
+- **Optional Parts:** Same as Colt Single Action Army
+
+---
+
+## Submachine Guns
+
+### HK MP5
+- **Required Parts:**
+  - Upper Assembly
+  - Lower Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Grips and Ergonomics
+  - Miscellaneous Accessories
+
+### Uzi
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Miscellaneous Accessories
+
+### Thompson M1928
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Drum Magazine
+  - Miscellaneous Accessories
+
+### CZ Scorpion EVO 3
+- **Required Parts:** Same as HK MP5
+- **Optional Parts:** Same as HK MP5
+
+### SIG Sauer MPX
+- **Required Parts:** Same as HK MP5
+- **Optional Parts:** Same as HK MP5
+
+### FN P90
+- **Required Parts:**
+  - Bullpup Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+### Kriss Vector
+- **Required Parts:**
+  - Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Magazines and Feeding Devices
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+---
+
+## Shotguns
+
+### Pump-Action Shotguns
+
+#### Remington 870
+- **Required Parts:**
+  - Barrel
+  - Action Bar
+  - Forend
+  - Stock
+  - Trigger Assembly
+  - Magazine Tube
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Mossberg 500
+- **Required Parts:** Same as Remington 870
+- **Optional Parts:** Same as Remington 870
+
+#### Mossberg 590
+- **Required Parts:** Same as Remington 870
+- **Optional Parts:** Same as Remington 870
+
+#### Winchester SXP
+- **Required Parts:** Same as Remington 870
+- **Optional Parts:** Same as Remington 870
+
+#### Ithaca 37
+- **Required Parts:** Same as Remington 870
+- **Optional Parts:** Same as Remington 870
+
+### Semi-Auto Shotguns
+
+#### Benelli M2
+- **Required Parts:**
+  - Barrel
+  - Inertia-Driven System
+  - Stock
+  - Trigger Assembly
+  - Magazine Tube
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Benelli M4
+- **Required Parts:**
+  - Barrel
+  - Gas-Operated System
+  - Stock
+  - Trigger Assembly
+  - Magazine Tube
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Beretta 1301
+- **Required Parts:** Same as Benelli M4
+- **Optional Parts:** Same as Benelli M4
+
+#### Franchi SPAS-12
+- **Required Parts:**
+  - Barrel
+  - Select-Fire System
+  - Stock
+  - Trigger Assembly
+  - Magazine Tube
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+#### Saiga-12
+- **Required Parts:**
+  - AK-style Receiver
+  - Barrel
+  - Stock
+  - Trigger Assembly
+  - Detachable Magazine
+- **Optional Parts:**
+  - Sights and Optics
+  - Muzzle Devices and Barrel Accessories
+  - Rails and Mounting Accessories
+  - Miscellaneous Accessories
+
+### Break-Action Shotguns
+
+#### Browning Citori
+- **Required Parts:**
+  - Barrel
+  - Stock
+  - Trigger Assembly
+- **Optional Parts:**
+  - Sights and Optics
+  - Choke Tubes
+  - Miscellaneous Accessories
+
+#### Beretta 686
+- **Required Parts:** Same as Browning Citori
+- **Optional Parts:** Same as Browning Citori
+
+#### CZ Bobwhite G2
+- **Required Parts:** Same as Browning Citori
+- **Optional Parts:** Same as Browning Citori
+
+---
+```

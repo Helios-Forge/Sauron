@@ -3,11 +3,21 @@ package api
 import (
 	"sauron-backend/internal/api/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
+
+	// Configure CORS middleware
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	// Firearm Models
 	router.GET("/firearm-models", handlers.GetFirearmModels)
@@ -15,6 +25,18 @@ func SetupRouter() *gin.Engine {
 	router.GET("/firearm-models/:id", handlers.GetFirearmModelByID)
 	router.PUT("/firearm-models/:id", handlers.UpdateFirearmModel)
 	router.DELETE("/firearm-models/:id", handlers.DeleteFirearmModel)
+
+	// NEW: Firearm Model Part Categories
+	router.GET("/firearm-models/:id/categories", handlers.GetFirearmModelCategories)
+	router.POST("/firearm-models/:id/categories/:category_id", handlers.AddCategoryToFirearmModel)
+	router.PUT("/firearm-models/:id/categories/:category_id", handlers.UpdateFirearmModelCategoryRelation)
+	router.DELETE("/firearm-models/:id/categories/:category_id", handlers.RemoveCategoryFromFirearmModel)
+
+	// NEW: Hierarchical categories endpoint
+	router.GET("/firearm-models/:id/categories-hierarchy", handlers.GetFirearmModelCategoriesHierarchy)
+
+	// NEW: Alternative endpoint for part categories by firearm - maps to the same handler
+	router.GET("/part-categories/firearm/:id", handlers.GetFirearmModelCategories)
 
 	// Parts
 	router.GET("/parts", handlers.GetParts)
@@ -25,15 +47,22 @@ func SetupRouter() *gin.Engine {
 	router.GET("/parts/category/:category", handlers.GetPartsByCategory)
 	router.GET("/parts/:id/compatible", handlers.GetCompatibleParts)
 
-	// Compatibility Rules
-	router.GET("/compatibility-rules", handlers.GetCompatibilityRules)
-	router.POST("/compatibility-rules", handlers.CreateCompatibilityRule)
-	router.GET("/compatibility-rules/:id", handlers.GetCompatibilityRuleByID)
-	router.PUT("/compatibility-rules/:id", handlers.UpdateCompatibilityRule)
-	router.DELETE("/compatibility-rules/:id", handlers.DeleteCompatibilityRule)
-	router.GET("/compatibility-rules/part/:partId", handlers.GetCompatibilityRulesByPartID)
-	router.GET("/compatibility-rules/firearm/:firearmId/part/:partId", handlers.GetCompatibilityRulesByFirearmAndPart)
-	router.GET("/compatibility-check", handlers.CheckPartsCompatibility)
+	// Legacy Part metadata endpoints (will be deprecated)
+	router.GET("/legacy/part-categories", handlers.GetLegacyPartCategories)
+	router.GET("/part-subcategories", handlers.GetPartSubcategories)
+	router.GET("/part-subcategories/:category", handlers.GetSubcategoriesByCategory)
+	router.GET("/compatible-models", handlers.GetCompatibleFirearmModels)
+	router.GET("/part-hierarchy", handlers.GetPartHierarchy)
+
+	// NEW: Part Categories (new schema)
+	router.GET("/part-categories", handlers.GetPartCategories)
+	router.GET("/part-categories/:id", handlers.GetPartCategoryByID)
+	router.POST("/part-categories", handlers.CreatePartCategory)
+	router.PUT("/part-categories/:id", handlers.UpdatePartCategory)
+	router.DELETE("/part-categories/:id", handlers.DeletePartCategory)
+
+	// Compatibility Rules - Removed as per new schema design
+	// These routes are no longer needed as compatibility information is now embedded in the models
 
 	// Prebuilt Firearms
 	router.GET("/prebuilt-firearms", handlers.GetPrebuiltFirearms)
@@ -58,7 +87,7 @@ func SetupRouter() *gin.Engine {
 	router.GET("/sellers/:id", handlers.GetSellerByID)
 	router.PUT("/sellers/:id", handlers.UpdateSeller)
 	router.DELETE("/sellers/:id", handlers.DeleteSeller)
-	router.PATCH("/sellers/:id/status", handlers.UpdateSellerStatus)
+	router.PATCH("/sellers/:id/affiliate-status", handlers.UpdateSellerStatus)
 
 	// Product Listings
 	router.GET("/listings", handlers.GetProductListings)
@@ -70,6 +99,13 @@ func SetupRouter() *gin.Engine {
 	router.GET("/listings/prebuilt/:prebuiltId", handlers.GetListingsByPrebuiltID)
 	router.GET("/listings/seller/:sellerId", handlers.GetListingsBySeller)
 	router.PATCH("/listings/:id/availability", handlers.UpdateListingAvailability)
+
+	// Manufacturers
+	router.GET("/manufacturers", handlers.GetManufacturers)
+	router.POST("/manufacturers", handlers.CreateManufacturer)
+	router.GET("/manufacturers/:id", handlers.GetManufacturerByID)
+	router.PUT("/manufacturers/:id", handlers.UpdateManufacturer)
+	router.DELETE("/manufacturers/:id", handlers.DeleteManufacturer)
 
 	return router
 }

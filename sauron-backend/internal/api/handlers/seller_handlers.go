@@ -103,17 +103,17 @@ func DeleteSeller(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-// @Summary     Update seller status
-// @Description Update the status of a specific seller
+// @Summary     Update seller affiliate status
+// @Description Update the affiliate status of a specific seller
 // @Tags        Sellers
 // @Accept      json
 // @Produce     json
 // @Param       id path int true "Seller ID"
-// @Param       status body object true "Status Update Info"
+// @Param       status body object true "Affiliate Status Update Info"
 // @Success     200 {object} models.Seller
 // @Failure     400 {object} map[string]string
 // @Failure     404 {object} map[string]string
-// @Router      /sellers/{id}/status [patch]
+// @Router      /sellers/{id}/affiliate-status [patch]
 func UpdateSellerStatus(c *gin.Context) {
 	id := c.Param("id")
 	var seller models.Seller
@@ -123,14 +123,21 @@ func UpdateSellerStatus(c *gin.Context) {
 	}
 
 	var input struct {
-		Status string `json:"status" binding:"required"`
+		IsAffiliate           bool   `json:"is_affiliate" binding:"required"`
+		AffiliateLinkTemplate string `json:"affiliate_link_template"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	seller.Status = input.Status
+	seller.IsAffiliate = input.IsAffiliate
+
+	// If becoming an affiliate, set the affiliate link template if provided
+	if input.IsAffiliate && input.AffiliateLinkTemplate != "" {
+		seller.AffiliateLinkTemplate = input.AffiliateLinkTemplate
+	}
+
 	db.DB.Save(&seller)
 	c.JSON(http.StatusOK, seller)
 }

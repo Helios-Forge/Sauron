@@ -7,7 +7,7 @@ import (
 )
 
 // FirearmModel represents a firearm model in the database
-// @Description Firearm model information including required and compatible parts
+// @Description Firearm model information including hierarchical parts structure
 type FirearmModel struct {
 	// Unique identifier for the firearm model
 	ID int `json:"id" gorm:"primaryKey" example:"1"`
@@ -15,22 +15,33 @@ type FirearmModel struct {
 	// Name of the firearm model
 	Name string `json:"name" gorm:"size:255;not null" example:"AR-15"`
 
+	// Description of the firearm model
+	Description string `json:"description" gorm:"type:text" example:"A high-quality semi-automatic modular rifle platform."`
+
+	// Reference to the manufacturer
+	ManufacturerID int          `json:"manufacturer_id" gorm:"index" example:"1"`
+	Manufacturer   Manufacturer `json:"-" gorm:"foreignKey:ManufacturerID"`
+
 	// Category of the firearm
-	Category string `json:"category" gorm:"size:100" example:"Assault Rifles"`
+	Category string `json:"category" gorm:"size:100" example:"Rifle"`
 
 	// Subcategory of the firearm
-	Subcategory string `json:"subcategory" gorm:"size:100" example:"Semi-Automatic"`
+	Subcategory string `json:"subcategory" gorm:"size:100" example:"Assault"`
 
 	// Variant of the firearm model
-	Variant string `json:"variant" gorm:"size:50" example:"M4"`
+	Variant string `json:"variant" gorm:"size:50" example:""`
 
-	// List of required parts for this firearm model
-	// @Description JSON array of required part names
-	RequiredParts datatypes.JSON `json:"required_parts" gorm:"type:jsonb;not null" swaggertype:"array,string" example:"['Upper Receiver', 'Lower Receiver', 'Bolt Carrier Group']"`
+	// Specifications of the firearm
+	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"weight\": \"6.5 lbs\", \"caliber\": \"5.56x45mm NATO\"}"`
 
-	// List of compatible parts for this firearm model
-	// @Description JSON array of compatible part categories
-	CompatibleParts datatypes.JSON `json:"compatible_parts" gorm:"type:jsonb" swaggertype:"array,string" example:"['5.56 NATO', '.223 Remington']"`
+	// Related part categories through FirearmModelPartCategory
+	PartCategories []PartCategory `json:"part_categories,omitempty" gorm:"many2many:firearm_model_part_categories"`
+
+	// Image URLs for the firearm model
+	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/images/firearms/AR-15.jpg\"]"`
+
+	// Price range for the firearm model
+	PriceRange string `json:"price_range" gorm:"size:50" example:"$765 - $1569"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`

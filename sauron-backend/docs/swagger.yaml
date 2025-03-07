@@ -1,195 +1,258 @@
 basePath: /
 definitions:
-  sauron-backend_internal_models.CompatibilityRule:
-    description: Rules defining compatibility between different parts and firearm
-      models
+  handlers.CategoryWithRequiredStatusHierarchy:
     properties:
-      compatible_with_part:
-        allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.Part'
-        description: Compatible part in the relationship
-      compatible_with_part_id:
-        description: ID of the part that is compatible with the primary part
-        example: 2
-        type: integer
-      constraint_type:
-        description: Type of compatibility constraint (e.g., "required", "optional",
-          "incompatible")
-        example: required
-        type: string
+      child_categories:
+        items:
+          $ref: '#/definitions/handlers.CategoryWithRequiredStatusHierarchy'
+        type: array
       created_at:
         description: Creation timestamp
         type: string
-      details:
-        description: |-
-          Additional details about the compatibility rule
-          @Description JSON object containing specific compatibility details
-        example: '{"notes":"Must use correct gas system length","caliber_specific":true}'
+      description:
+        description: Description of the category
+        example: Core upper receiver components
         type: string
-      firearm_model:
-        allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
-        description: Related firearm model
-      firearm_model_id:
-        description: ID of the firearm model this rule applies to
-        example: 1
-        type: integer
       id:
-        description: Unique identifier for the compatibility rule
+        description: Unique identifier for the category
         example: 1
         type: integer
-      part:
+      is_required:
+        example: true
+        type: boolean
+      name:
+        description: Name of the category
+        example: Upper Assembly
+        type: string
+      parent_category:
         allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.Part'
-        description: Primary part in the compatibility relationship
-      part_id:
-        description: ID of the primary part in this compatibility rule
-        example: 1
+        - $ref: '#/definitions/models.PartCategory'
+        description: Parent category (self-referential relationship)
+      parent_category_id:
+        description: Parent category ID for hierarchical relationships (null for top-level
+          categories)
+        example: 0
         type: integer
       updated_at:
         description: Last update timestamp
         type: string
     type: object
-  sauron-backend_internal_models.FirearmModel:
-    description: Firearm model information including required and compatible parts
+  handlers.PartItem:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/handlers.PartItem'
+        type: array
+      id:
+        example: upper-receiver
+        type: string
+      name:
+        example: Upper Receiver
+        type: string
+    type: object
+  models.FirearmModel:
+    description: Firearm model information including hierarchical parts structure
     properties:
       category:
         description: Category of the firearm
-        example: Assault Rifles
+        example: Rifle
         type: string
-      compatible_parts:
-        description: |-
-          List of compatible parts for this firearm model
-          @Description JSON array of compatible part categories
-        example:
-        - '[''5.56 NATO'''
-        - ' ''.223 Remington'']'
-        items:
-          type: string
-        type: array
       created_at:
         description: Creation timestamp
         type: string
+      description:
+        description: Description of the firearm model
+        example: A high-quality semi-automatic modular rifle platform.
+        type: string
       id:
         description: Unique identifier for the firearm model
+        example: 1
+        type: integer
+      images:
+        description: Image URLs for the firearm model
+        example:
+        - '["https://example.com/images/firearms/AR-15.jpg"]'
+        items:
+          type: string
+        type: array
+      manufacturer_id:
+        description: Reference to the manufacturer
         example: 1
         type: integer
       name:
         description: Name of the firearm model
         example: AR-15
         type: string
-      required_parts:
-        description: |-
-          List of required parts for this firearm model
-          @Description JSON array of required part names
-        example:
-        - '[''Upper Receiver'''
-        - ' ''Lower Receiver'''
-        - ' ''Bolt Carrier Group'']'
+      part_categories:
+        description: Related part categories through FirearmModelPartCategory
         items:
-          type: string
+          $ref: '#/definitions/models.PartCategory'
         type: array
+      price_range:
+        description: Price range for the firearm model
+        example: $765 - $1569
+        type: string
+      specifications:
+        description: Specifications of the firearm
+        example: '{"weight": "6.5 lbs", "caliber": "5.56x45mm NATO"}'
+        type: string
       subcategory:
         description: Subcategory of the firearm
-        example: Semi-Automatic
+        example: Assault
         type: string
       updated_at:
         description: Last update timestamp
         type: string
       variant:
         description: Variant of the firearm model
-        example: M4
+        example: ""
         type: string
     type: object
-  sauron-backend_internal_models.Part:
+  models.Part:
     description: Detailed information about a firearm part including compatibility
-      and restrictions
+      and specifications
     properties:
-      category:
-        description: Main category of the part
-        example: Upper Assembly
-        type: string
-      compatibility:
-        description: |-
-          Compatibility information with other parts and models
-          @Description JSON object containing compatibility rules
-        example: '{"firearm_models":["AR-15","M4"],"calibers":["5.56 NATO"]}'
-        type: string
       created_at:
         description: Creation timestamp
+        type: string
+      description:
+        description: Description of the part
+        example: A 30-round 5.56x45 NATO polymer magazine for AR-15 rifles.
+        type: string
+      dimensions:
+        description: Dimensions of the part
+        example: 5 x 3 x 2 in
         type: string
       id:
         description: Unique identifier for the part
         example: 1
         type: integer
+      images:
+        description: Image URLs for the part
+        example:
+        - '["https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg"]'
+        items:
+          type: string
+        type: array
       is_prebuilt:
         description: Whether this is a pre-built component
         example: false
         type: boolean
-      legal_restrictions:
-        description: |-
-          Legal restrictions or requirements for this part
-          @Description JSON object containing legal restriction details
-        example: '{"restricted_states":["CA","NY"],"license_required":true}'
-        type: string
+      manufacturer_id:
+        description: Reference to the manufacturer
+        example: 1
+        type: integer
       name:
         description: Name of the part
-        example: Bolt Carrier Group
+        example: PMAG 30 AR/M4 GEN M3
         type: string
-      required_sub_components:
-        description: |-
-          List of required sub-components for this part
-          @Description JSON array of required sub-component names
-        example: '["bolt","carrier","firing pin"]'
+      part_category:
+        $ref: '#/definitions/models.PartCategory'
+      part_category_id:
+        description: Reference to the part category
+        example: 18
+        type: integer
+      updated_at:
+        description: Last update timestamp
         type: string
-      sub_components:
-        description: |-
-          List of sub-components that make up this part
-          @Description JSON array of sub-component details
-        example: '{"pins":["firing pin","cam pin"],"springs":["extractor spring"]}'
+      weight:
+        description: Weight of the part in pounds
+        example: 0.54
+        type: number
+    type: object
+  models.PartCategory:
+    description: Hierarchical structure of part categories
+    properties:
+      child_categories:
+        description: Child categories (reverse relationship)
+        items:
+          $ref: '#/definitions/models.PartCategory'
+        type: array
+      created_at:
+        description: Creation timestamp
         type: string
-      subcategory:
-        description: Subcategory for more specific classification
-        example: Bolt Carrier Group
+      description:
+        description: Description of the category
+        example: Core upper receiver components
         type: string
+      id:
+        description: Unique identifier for the category
+        example: 1
+        type: integer
+      name:
+        description: Name of the category
+        example: Upper Assembly
+        type: string
+      parent_category:
+        allOf:
+        - $ref: '#/definitions/models.PartCategory'
+        description: Parent category (self-referential relationship)
+      parent_category_id:
+        description: Parent category ID for hierarchical relationships (null for top-level
+          categories)
+        example: 0
+        type: integer
       updated_at:
         description: Last update timestamp
         type: string
     type: object
-  sauron-backend_internal_models.PrebuiltFirearm:
-    description: Complete firearm configuration with specific components
+  models.PrebuiltFirearm:
+    description: Complete firearm configuration with hierarchical parts structure
     properties:
-      components:
-        description: |-
-          List of components included in this build
-          @Description JSON object containing component details and specifications
-        example: '{"upper_receiver":"BCM Complete Upper","lower_receiver":"Aero M4E1","barrel":"16
-          inch 5.56 NATO"}'
+      availability:
+        description: Availability status
+        example: in_stock
+        type: string
+      compatible_parts:
+        description: Compatible accessories specifically for this prebuilt configuration
+        example: '{"Magazines and Feeding Devices": {"Detachable Box Magazine": {"id":
+          12}}}'
         type: string
       created_at:
         description: Creation timestamp
         type: string
-      firearm_model:
-        allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
-        description: Base firearm model
+      description:
+        description: Description of the prebuilt firearm
+        example: A prebuilt M4 variant with a 14.5-inch barrel.
+        type: string
       firearm_model_id:
-        description: ID of the base firearm model
+        description: Reference to the base firearm model
         example: 1
         type: integer
       id:
         description: Unique identifier for the prebuilt firearm
         example: 1
         type: integer
+      images:
+        description: Image URLs for the prebuilt firearm
+        example:
+        - '["https://example.com/images/firearms/AR-15_prebuilt.jpg"]'
+        items:
+          type: string
+        type: array
       name:
         description: Name of the prebuilt configuration
-        example: Custom AR-15 Build
+        example: Colt M4 Carbine
+        type: string
+      parts:
+        description: Hierarchical structure of actual parts used in this prebuilt
+          with IDs
+        example: '{"Upper Assembly": {"id": 1, "sub_parts": {"Bolt Carrier Group":
+          {"id": 5}}}}'
+        type: string
+      price:
+        description: Base price of the prebuilt firearm
+        example: 999.99
+        type: number
+      specifications:
+        description: Specifications specific to this prebuilt configuration
+        example: '{"weight": "6.5 lbs", "caliber": "5.56x45mm NATO"}'
         type: string
       updated_at:
         description: Last update timestamp
         type: string
     type: object
-  sauron-backend_internal_models.ProductListing:
+  models.ProductListing:
     description: Product listing information including pricing and availability
     properties:
       additional_info:
@@ -218,7 +281,7 @@ definitions:
         type: string
       part:
         allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.Part'
+        - $ref: '#/definitions/models.Part'
         description: Related part information if this is a part listing
       part_id:
         description: 'Optional: ID of the part if this listing is for a part'
@@ -226,7 +289,7 @@ definitions:
         type: integer
       prebuilt_firearm:
         allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+        - $ref: '#/definitions/models.PrebuiltFirearm'
         description: Related prebuilt firearm information if this is a prebuilt listing
       prebuilt_id:
         description: 'Optional: ID of the prebuilt firearm if this listing is for
@@ -239,7 +302,7 @@ definitions:
         type: number
       seller:
         allOf:
-        - $ref: '#/definitions/sauron-backend_internal_models.Seller'
+        - $ref: '#/definitions/models.Seller'
         description: Related seller information
       seller_id:
         description: ID of the seller offering this product
@@ -264,70 +327,74 @@ definitions:
         example: https://www.brownells.com/products/bcg-standard
         type: string
     type: object
-  sauron-backend_internal_models.Seller:
-    description: Information about sellers and their API integrations
+  models.Seller:
+    description: Information about sellers who offer parts and prebuilt firearms
     properties:
-      api_endpoint:
-        description: API endpoint for the seller's integration
-        example: https://api.brownells.com/v1
+      affiliate_link_template:
+        description: Template for creating affiliate links (NULL if not affiliate)
+        example: https://www.brownells.com/?aff=gunguru_{product_id}
         type: string
-      api_key:
-        description: Encrypted API key for authentication
-        example: encrypted_api_key_here
+      contact_info:
+        description: Contact information for the seller
+        example: '{"phone": "800-741-0015", "email": "support@brownells.com"}'
         type: string
       created_at:
         description: Creation timestamp
+        type: string
+      description:
+        description: Description of the seller
+        example: A trusted retailer of firearm parts and accessories.
         type: string
       id:
         description: Unique identifier for the seller
         example: 1
         type: integer
+      is_affiliate:
+        description: Whether the seller is an affiliate partner
+        example: false
+        type: boolean
+      logo_url:
+        description: URL to the seller's logo
+        example: https://example.com/brownells_logo.png
+        type: string
       name:
         description: Name of the seller
         example: Brownells
         type: string
-      settings:
-        description: |-
-          Additional seller-specific settings
-          @Description JSON object containing seller configuration
-        example: '{"api_version":"v1","update_frequency":"daily","preferred_currency":"USD"}'
-        type: string
-      status:
-        description: Current status of the seller (active, inactive, suspended)
-        example: active
-        type: string
       updated_at:
         description: Last update timestamp
         type: string
-      website:
+      website_url:
         description: Website URL of the seller
         example: https://www.brownells.com
         type: string
     type: object
-  sauron-backend_internal_models.UserSuggestion:
-    description: User suggestions for new content or improvements
+  models.UserSuggestion:
+    description: User suggestions for new models, parts, or configurations
     properties:
       created_at:
         description: Creation timestamp
+        type: string
+      description:
+        description: Description of the suggestion
+        example: A suggestion for a long-range AR-10 configuration.
         type: string
       id:
         description: Unique identifier for the suggestion
         example: 1
         type: integer
       model_name:
-        description: Name of the suggested model or part
-        example: New AR-15 Variant
+        description: Name of the suggested model or configuration
+        example: Custom AR-10 Build
         type: string
       status:
         description: Current status of the suggestion (pending, approved, rejected)
         example: pending
         type: string
       suggested_parts:
-        description: |-
-          List of suggested parts or modifications
-          @Description JSON object containing detailed suggestions
-        example: '{"parts":["Custom Handguard","Modified BCG"],"modifications":["Enhanced
-          Feed Ramps"]}'
+        description: List of suggested parts or modifications
+        example: '{"Barrel": {"name": "20in 308 Barrel"}, "Stock": {"name": "Magpul
+          PRS"}}'
         type: string
       updated_at:
         description: Last update timestamp
@@ -336,233 +403,18 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: A comprehensive API for managing firearm parts, models, and compatibility.
+    email: support@sauron.io
+    name: Sauron API Support
+    url: https://sauron.io/support
+  description: A comprehensive API for firearms database management including parts,
+    models, categories, product listings, and compatibility.
   license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://sauron.io/terms/
   title: Sauron Backend API
-  version: "1.0"
+  version: "2.0"
 paths:
-  /compatibility-check:
-    get:
-      consumes:
-      - application/json
-      description: Check if two parts are compatible for a specific firearm model
-      parameters:
-      - description: Firearm Model ID
-        in: query
-        name: firearmId
-        required: true
-        type: integer
-      - description: First Part ID
-        in: query
-        name: part1
-        required: true
-        type: integer
-      - description: Second Part ID
-        in: query
-        name: part2
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Check parts compatibility
-      tags:
-      - Compatibility Rules
-  /compatibility-rules:
-    get:
-      consumes:
-      - application/json
-      description: Get a list of all compatibility rules in the database
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-            type: array
-      summary: Get all compatibility rules
-      tags:
-      - Compatibility Rules
-    post:
-      consumes:
-      - application/json
-      description: Add a new compatibility rule to the database
-      parameters:
-      - description: Compatibility Rule Info
-        in: body
-        name: rule
-        required: true
-        schema:
-          $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new compatibility rule
-      tags:
-      - Compatibility Rules
-  /compatibility-rules/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a specific compatibility rule
-      parameters:
-      - description: Compatibility Rule ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete a compatibility rule
-      tags:
-      - Compatibility Rules
-    get:
-      consumes:
-      - application/json
-      description: Get details of a specific compatibility rule
-      parameters:
-      - description: Compatibility Rule ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get a compatibility rule by ID
-      tags:
-      - Compatibility Rules
-    put:
-      consumes:
-      - application/json
-      description: Update details of a specific compatibility rule
-      parameters:
-      - description: Compatibility Rule ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Updated Compatibility Rule Info
-        in: body
-        name: rule
-        required: true
-        schema:
-          $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update a compatibility rule
-      tags:
-      - Compatibility Rules
-  /compatibility-rules/firearm/{firearmId}/part/{partId}:
-    get:
-      consumes:
-      - application/json
-      description: Get all compatibility rules for a specific firearm model and part
-      parameters:
-      - description: Firearm Model ID
-        in: path
-        name: firearmId
-        required: true
-        type: integer
-      - description: Part ID
-        in: path
-        name: partId
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-            type: array
-      summary: Get compatibility rules by firearm and part
-      tags:
-      - Compatibility Rules
-  /compatibility-rules/part/{partId}:
-    get:
-      consumes:
-      - application/json
-      description: Get all compatibility rules for a specific part
-      parameters:
-      - description: Part ID
-        in: path
-        name: partId
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/sauron-backend_internal_models.CompatibilityRule'
-            type: array
-      summary: Get compatibility rules by part ID
-      tags:
-      - Compatibility Rules
   /firearm-models:
     get:
       consumes:
@@ -575,7 +427,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+              $ref: '#/definitions/models.FirearmModel'
             type: array
       summary: Get all firearm models
       tags:
@@ -590,14 +442,14 @@ paths:
         name: model
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+          $ref: '#/definitions/models.FirearmModel'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+            $ref: '#/definitions/models.FirearmModel'
         "400":
           description: Bad Request
           schema:
@@ -648,7 +500,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+            $ref: '#/definitions/models.FirearmModel'
         "404":
           description: Not Found
           schema:
@@ -673,14 +525,14 @@ paths:
         name: model
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+          $ref: '#/definitions/models.FirearmModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.FirearmModel'
+            $ref: '#/definitions/models.FirearmModel'
         "400":
           description: Bad Request
           schema:
@@ -696,6 +548,253 @@ paths:
       summary: Update a firearm model
       tags:
       - Firearm Models
+  /firearm-models/{id}/categories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all part categories associated with a specific firearm
+        model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Filter by required status (true=required, false=optional, omit=both)
+        in: query
+        name: required
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Array of part categories with required status
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Invalid firearm model ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Firearm model not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get part categories for a firearm model
+      tags:
+      - Firearm Models
+      - Part Categories
+  /firearm-models/{id}/categories-hierarchy:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all part categories associated with a specific firearm
+        model in a hierarchical structure
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hierarchical array of part categories with required status
+          schema:
+            items:
+              $ref: '#/definitions/handlers.CategoryWithRequiredStatusHierarchy'
+            type: array
+        "400":
+          description: Invalid firearm model ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Firearm model not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get hierarchical categories for a firearm model
+      tags:
+      - Firearm Models
+      - Part Categories
+  /firearm-models/{id}/categories/{category_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes the association between a part category and a firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Part Category ID
+        in: path
+        name: category_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Relationship not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remove a category from a firearm model
+      tags:
+      - Firearm Models
+      - Part Categories
+    post:
+      consumes:
+      - application/json
+      description: Associates a part category with a firearm model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Part Category ID
+        in: path
+        name: category_id
+        required: true
+        type: integer
+      - description: Relationship parameters
+        in: body
+        name: relationship
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Firearm model or part category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Relationship already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add a category to a firearm model
+      tags:
+      - Firearm Models
+      - Part Categories
+    put:
+      consumes:
+      - application/json
+      description: Updates the relationship between a firearm model and a part category
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Part Category ID
+        in: path
+        name: category_id
+        required: true
+        type: integer
+      - description: Updated relationship parameters
+        in: body
+        name: relationship
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Relationship not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a firearm model-category relationship
+      tags:
+      - Firearm Models
+      - Part Categories
   /listings:
     get:
       consumes:
@@ -708,7 +807,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+              $ref: '#/definitions/models.ProductListing'
             type: array
       summary: Get all product listings
       tags:
@@ -723,14 +822,14 @@ paths:
         name: listing
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+          $ref: '#/definitions/models.ProductListing'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            $ref: '#/definitions/models.ProductListing'
         "400":
           description: Bad Request
           schema:
@@ -781,7 +880,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            $ref: '#/definitions/models.ProductListing'
         "404":
           description: Not Found
           schema:
@@ -806,14 +905,14 @@ paths:
         name: listing
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+          $ref: '#/definitions/models.ProductListing'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            $ref: '#/definitions/models.ProductListing'
         "400":
           description: Bad Request
           schema:
@@ -853,7 +952,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+            $ref: '#/definitions/models.ProductListing'
         "400":
           description: Bad Request
           schema:
@@ -887,7 +986,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+              $ref: '#/definitions/models.ProductListing'
             type: array
       summary: Get listings by part ID
       tags:
@@ -910,7 +1009,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+              $ref: '#/definitions/models.ProductListing'
             type: array
       summary: Get listings by prebuilt ID
       tags:
@@ -933,11 +1032,544 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.ProductListing'
+              $ref: '#/definitions/models.ProductListing'
             type: array
       summary: Get listings by seller
       tags:
       - Product Listings
+  /part-categories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all part categories with optional parent-child relationships
+      parameters:
+      - description: Whether to include child categories recursively
+        in: query
+        name: recursive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PartCategory'
+            type: array
+        "500":
+          description: Error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all part categories
+      tags:
+      - Part Categories
+    post:
+      consumes:
+      - application/json
+      description: Creates a new part category
+      parameters:
+      - description: Part Category object
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.PartCategory'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.PartCategory'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new part category
+      tags:
+      - Part Categories
+  /part-categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a part category
+      parameters:
+      - description: Part Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a part category
+      tags:
+      - Part Categories
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single part category by ID
+      parameters:
+      - description: Part Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PartCategory'
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get part category by ID
+      tags:
+      - Part Categories
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing part category
+      parameters:
+      - description: Part Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Part Category object
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.PartCategory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PartCategory'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Category not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a part category
+      tags:
+      - Part Categories
+  /part-categories/firearm/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all part categories associated with a specific firearm
+        model
+      parameters:
+      - description: Firearm Model ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Filter by required status (true=required, false=optional, omit=both)
+        in: query
+        name: required
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Array of part categories with required status
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Invalid firearm model ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Firearm model not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get part categories for a firearm model
+      tags:
+      - Firearm Models
+      - Part Categories
+  /part-hierarchy:
+    get:
+      consumes:
+      - application/json
+      description: Get a hierarchical view of part categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.PartItem'
+            type: array
+      summary: Get part hierarchy
+      tags:
+      - Parts
+  /parts:
+    get:
+      consumes:
+      - application/json
+      description: Get all parts with optional filtering by category, subcategory,
+        or category_id
+      parameters:
+      - description: Filter by category name
+        in: query
+        name: category
+        type: string
+      - description: Filter by subcategory name
+        in: query
+        name: subcategory
+        type: string
+      - description: Filter by part category ID (new schema)
+        in: query
+        name: category_id
+        type: integer
+      - description: Filter by prebuilt status
+        in: query
+        name: is_prebuilt
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Part'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all parts
+      tags:
+      - Parts
+    post:
+      consumes:
+      - application/json
+      description: Create a new part in the database
+      parameters:
+      - description: Part object to create
+        in: body
+        name: part
+        required: true
+        schema:
+          $ref: '#/definitions/models.Part'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Part'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a part
+      tags:
+      - Parts
+  /parts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific part
+      parameters:
+      - description: Part ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Part not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a part
+      tags:
+      - Parts
+    get:
+      consumes:
+      - application/json
+      description: Get a specific part by its ID
+      parameters:
+      - description: Part ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Part'
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Part not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get part by ID
+      tags:
+      - Parts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing part
+      parameters:
+      - description: Part ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated part object
+        in: body
+        name: part
+        required: true
+        schema:
+          $ref: '#/definitions/models.Part'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Part'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Part not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a part
+      tags:
+      - Parts
+  /parts/{id}/compatible:
+    get:
+      consumes:
+      - application/json
+      description: Get all parts compatible with a specific part
+      parameters:
+      - description: Part ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Part'
+            type: array
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Part not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get compatible parts
+      tags:
+      - Parts
+      - Compatibility
+  /parts/category/{category}:
+    get:
+      consumes:
+      - application/json
+      description: Get all parts in a specific category
+      parameters:
+      - description: Category name
+        in: path
+        name: category
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Part'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get parts by category
+      tags:
+      - Parts
+  /parts/compatible-models:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of unique firearm models that parts are compatible with
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Get compatible firearm models
+      tags:
+      - Parts
   /prebuilt-firearms:
     get:
       consumes:
@@ -950,7 +1582,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+              $ref: '#/definitions/models.PrebuiltFirearm'
             type: array
       summary: Get all prebuilt firearms
       tags:
@@ -965,14 +1597,14 @@ paths:
         name: firearm
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+          $ref: '#/definitions/models.PrebuiltFirearm'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+            $ref: '#/definitions/models.PrebuiltFirearm'
         "400":
           description: Bad Request
           schema:
@@ -1023,7 +1655,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+            $ref: '#/definitions/models.PrebuiltFirearm'
         "404":
           description: Not Found
           schema:
@@ -1048,14 +1680,14 @@ paths:
         name: firearm
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+          $ref: '#/definitions/models.PrebuiltFirearm'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+            $ref: '#/definitions/models.PrebuiltFirearm'
         "400":
           description: Bad Request
           schema:
@@ -1089,7 +1721,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.PrebuiltFirearm'
+              $ref: '#/definitions/models.PrebuiltFirearm'
             type: array
       summary: Get prebuilt firearms by model
       tags:
@@ -1106,7 +1738,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.Seller'
+              $ref: '#/definitions/models.Seller'
             type: array
       summary: Get all sellers
       tags:
@@ -1121,14 +1753,14 @@ paths:
         name: seller
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.Seller'
+          $ref: '#/definitions/models.Seller'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+            $ref: '#/definitions/models.Seller'
         "400":
           description: Bad Request
           schema:
@@ -1179,7 +1811,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+            $ref: '#/definitions/models.Seller'
         "404":
           description: Not Found
           schema:
@@ -1204,14 +1836,14 @@ paths:
         name: seller
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.Seller'
+          $ref: '#/definitions/models.Seller'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+            $ref: '#/definitions/models.Seller'
         "400":
           description: Bad Request
           schema:
@@ -1227,18 +1859,18 @@ paths:
       summary: Update a seller
       tags:
       - Sellers
-  /sellers/{id}/status:
+  /sellers/{id}/affiliate-status:
     patch:
       consumes:
       - application/json
-      description: Update the status of a specific seller
+      description: Update the affiliate status of a specific seller
       parameters:
       - description: Seller ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Status Update Info
+      - description: Affiliate Status Update Info
         in: body
         name: status
         required: true
@@ -1250,7 +1882,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.Seller'
+            $ref: '#/definitions/models.Seller'
         "400":
           description: Bad Request
           schema:
@@ -1263,7 +1895,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Update seller status
+      summary: Update seller affiliate status
       tags:
       - Sellers
   /user-suggestions:
@@ -1278,7 +1910,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+              $ref: '#/definitions/models.UserSuggestion'
             type: array
       summary: Get all user suggestions
       tags:
@@ -1293,14 +1925,14 @@ paths:
         name: suggestion
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+          $ref: '#/definitions/models.UserSuggestion'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            $ref: '#/definitions/models.UserSuggestion'
         "400":
           description: Bad Request
           schema:
@@ -1351,7 +1983,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            $ref: '#/definitions/models.UserSuggestion'
         "404":
           description: Not Found
           schema:
@@ -1376,14 +2008,14 @@ paths:
         name: suggestion
         required: true
         schema:
-          $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+          $ref: '#/definitions/models.UserSuggestion'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            $ref: '#/definitions/models.UserSuggestion'
         "400":
           description: Bad Request
           schema:
@@ -1422,7 +2054,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+            $ref: '#/definitions/models.UserSuggestion'
         "400":
           description: Bad Request
           schema:
@@ -1460,7 +2092,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/sauron-backend_internal_models.UserSuggestion'
+              $ref: '#/definitions/models.UserSuggestion'
             type: array
       summary: Get user suggestions by status
       tags:

@@ -1,0 +1,574 @@
+package db
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
+	"sauron-backend/internal/models"
+	"strings"
+	"time"
+
+	"gorm.io/datatypes"
+)
+
+// Mock sellers data
+var sellers = []models.Seller{
+	{
+		Name:                  "Brownells",
+		WebsiteURL:            "https://www.brownells.com",
+		Description:           "A trusted retailer of firearm parts and accessories.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.brownells.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/brownells_logo.png",
+	},
+	{
+		Name:                  "Midway USA",
+		WebsiteURL:            "https://www.midwayusa.com",
+		Description:           "Quality shooting and hunting supplies with industry-best customer service.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.midwayusa.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/midway_logo.png",
+	},
+	{
+		Name:                  "Primary Arms",
+		WebsiteURL:            "https://www.primaryarms.com",
+		Description:           "Provider of high-quality firearms, optics, and accessories.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://www.primaryarms.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/primaryarms_logo.png",
+	},
+	{
+		Name:                  "Palmetto State Armory",
+		WebsiteURL:            "https://palmettostatearmory.com",
+		Description:           "American firearms, ammunition, and accessories at great prices.",
+		IsAffiliate:           true,
+		AffiliateLinkTemplate: "https://palmettostatearmory.com/?aff=gunguru_{product_id}",
+		LogoURL:               "https://example.com/psa_logo.png",
+	},
+}
+
+// Firearm categories and their required parts
+var firearmCategories = map[string]map[string][]string{
+	"AR-15": {
+		"required_parts":   {"Upper Assembly", "Lower Assembly", "Bolt Carrier Group", "Charging Handle"},
+		"compatible_parts": {"Sights and Optics", "Muzzle Devices", "Handguards", "Stocks", "Grips"},
+	},
+	"AK-47": {
+		"required_parts":   {"Barrel Assembly", "Receiver", "Bolt Carrier Group", "Gas System"},
+		"compatible_parts": {"Furniture", "Muzzle Devices", "Optic Mounts", "Magazines"},
+	},
+	"Glock 17": {
+		"required_parts":   {"Slide Assembly", "Frame", "Barrel", "Recoil Spring"},
+		"compatible_parts": {"Sights", "Magazines", "Triggers", "Slide Parts"},
+	},
+}
+
+// Mock parts data structure
+var partCategories = map[string][]string{
+	"Upper Assembly": {
+		"Complete Upper Receiver",
+		"Stripped Upper Receiver",
+		"Forward Assist Assembly",
+		"Dust Cover Assembly",
+	},
+	"Lower Assembly": {
+		"Complete Lower Receiver",
+		"Stripped Lower Receiver",
+		"Lower Parts Kit",
+		"Buffer Tube Assembly",
+	},
+	"Bolt Carrier Group": {
+		"Complete BCG",
+		"Bolt",
+		"Carrier",
+		"Firing Pin",
+	},
+	"Barrel": {
+		"16\" 5.56 NATO",
+		"14.5\" 5.56 NATO",
+		"18\" .223 Wylde",
+		"20\" 5.56 NATO",
+	},
+	"Handguard": {
+		"15\" M-LOK",
+		"13\" Quad Rail",
+		"9\" KeyMod",
+		"7\" M-LOK",
+	},
+}
+
+// compatibilityTemplates defines templates for firearm model compatibility
+var compatibilityTemplates = map[string]map[string][]string{
+	// AR-15 Platform
+	"Colt AR-15": {
+		"required_parts": {
+			"Lower Receiver", "Upper Receiver", "Barrel", "Bolt Carrier Group",
+			"Charging Handle", "Buffer Assembly", "Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Handguards", "Muzzle Devices", "Optics", "Grips", "Magazines", "Triggers",
+		},
+	},
+	"Smith & Wesson M&P15": {
+		"required_parts": {
+			"Lower Receiver", "Upper Receiver", "Barrel", "Bolt Carrier Group",
+			"Charging Handle", "Buffer Assembly", "Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Handguards", "Muzzle Devices", "Optics", "Grips", "Magazines", "Triggers",
+		},
+	},
+
+	// AK Platform
+	"Arsenal AK-47": {
+		"required_parts": {
+			"Receiver", "Barrel", "Bolt Carrier Group", "Gas System",
+			"Trigger Group", "Stock", "Handguard",
+		},
+		"compatible_parts": {
+			"Muzzle Devices", "Optic Mounts", "Grips", "Magazines", "Triggers",
+		},
+	},
+	"Zastava ZPAP M70": {
+		"required_parts": {
+			"Receiver", "Barrel", "Bolt Carrier Group", "Gas System",
+			"Trigger Group", "Stock", "Handguard",
+		},
+		"compatible_parts": {
+			"Muzzle Devices", "Optic Mounts", "Grips", "Magazines", "Triggers",
+		},
+	},
+
+	// Glock Pistols
+	"Glock 19": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring Assembly",
+			"Trigger Assembly", "Magazine",
+		},
+		"compatible_parts": {
+			"Sights", "Optic Cuts", "Threaded Barrels", "Extended Magazines", "Triggers",
+		},
+	},
+	"Glock 17": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring Assembly",
+			"Trigger Assembly", "Magazine",
+		},
+		"compatible_parts": {
+			"Sights", "Optic Cuts", "Threaded Barrels", "Extended Magazines", "Triggers",
+		},
+	},
+
+	// 1911 Pistols
+	"Colt 1911": {
+		"required_parts": {
+			"Frame", "Slide", "Barrel", "Recoil Spring",
+			"Trigger Assembly", "Magazine", "Grips",
+		},
+		"compatible_parts": {
+			"Sights", "Trigger Kits", "Hammers", "Grip Safeties", "Mainspring Housings",
+		},
+	},
+
+	// Shotguns
+	"Mossberg 500": {
+		"required_parts": {
+			"Receiver", "Barrel", "Pump Action", "Magazine Tube",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Forends", "Choke Tubes", "Shell Carriers", "Recoil Pads", "Sights",
+		},
+	},
+	"Remington 870": {
+		"required_parts": {
+			"Receiver", "Barrel", "Pump Action", "Magazine Tube",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Forends", "Choke Tubes", "Shell Carriers", "Recoil Pads", "Sights",
+		},
+	},
+	"Benelli M4": {
+		"required_parts": {
+			"Receiver", "Barrel", "Gas System", "Bolt Assembly",
+			"Trigger Group", "Stock",
+		},
+		"compatible_parts": {
+			"Magazine Extensions", "Choke Tubes", "Recoil Pads", "Sights", "Optic Mounts",
+		},
+	},
+}
+
+// getDefaultCaliberForModel returns appropriate caliber based on the firearm model name
+func getDefaultCaliberForModel(modelName string) string {
+	// AR platform rifles typically come in 5.56 NATO
+	if strings.Contains(modelName, "AR-15") || strings.Contains(modelName, "M4") ||
+		strings.Contains(modelName, "M16") || strings.Contains(modelName, "SIG M400") {
+		return "5.56x45mm NATO"
+	}
+
+	// AK platform rifles typically come in 7.62x39mm
+	if strings.Contains(modelName, "AK-47") || strings.Contains(modelName, "AKM") {
+		return "7.62x39mm"
+	}
+
+	// AK-74 variants use 5.45x39mm
+	if strings.Contains(modelName, "AK-74") {
+		return "5.45x39mm"
+	}
+
+	// Battle rifles and some hunting rifles
+	if strings.Contains(modelName, "AR-10") || strings.Contains(modelName, "SR-25") {
+		return "7.62x51mm NATO"
+	}
+
+	// Common pistol calibers
+	if strings.Contains(modelName, "Glock") || strings.Contains(modelName, "SIG P320") ||
+		strings.Contains(modelName, "M&P") || strings.Contains(modelName, "CZ P-10") {
+		return "9x19mm Parabellum"
+	}
+
+	// 1911 style pistols typically come in .45 ACP
+	if strings.Contains(modelName, "1911") || strings.Contains(modelName, "P220") {
+		return ".45 ACP"
+	}
+
+	// Common revolver calibers
+	if strings.Contains(modelName, "Model 686") || strings.Contains(modelName, "Python") {
+		return ".357 Magnum"
+	}
+
+	// Shotguns are typically 12 gauge
+	if strings.Contains(modelName, "Mossberg") || strings.Contains(modelName, "Remington") ||
+		strings.Contains(modelName, "Benelli") || strings.Contains(modelName, "Beretta") {
+		return "12 Gauge"
+	}
+
+	// Default for other models
+	return "Multiple"
+}
+
+// SeedDatabase populates the database with initial mock data
+func SeedDatabase() {
+	log.Println("Starting database seeding...")
+
+	// Seed Sellers
+	log.Println("Seeding sellers...")
+	for _, seller := range sellers {
+		if err := DB.Create(&seller).Error; err != nil {
+			log.Printf("Error seeding seller %s: %v", seller.Name, err)
+		}
+	}
+
+	// Add additional sellers
+	for _, sellerName := range additionalSellers {
+		seller := models.Seller{
+			Name:        sellerName,
+			WebsiteURL:  "https://www." + strings.ToLower(strings.ReplaceAll(sellerName, " ", "")) + ".com",
+			Description: "Retailer of firearm parts and accessories.",
+			IsAffiliate: false,
+			LogoURL:     "https://example.com/" + strings.ToLower(strings.ReplaceAll(sellerName, " ", "_")) + "_logo.png",
+		}
+		if err := DB.Create(&seller).Error; err != nil {
+			log.Printf("Error seeding seller %s: %v", sellerName, err)
+		}
+	}
+
+	// Seed Firearm Models
+	log.Println("Seeding firearm models...")
+	for category, modelNames := range allFirearmModels {
+		// Parse the category to extract main category and subcategory
+		var mainCategory, subCategory string
+
+		if strings.Contains(category, "Rifles") {
+			mainCategory = "Rifles"
+			subCategory = strings.TrimSuffix(category, " Rifles")
+		} else if strings.Contains(category, "Pistols") {
+			mainCategory = "Pistols"
+			subCategory = strings.TrimSuffix(category, " Pistols")
+		} else if category == "Revolvers" {
+			mainCategory = "Pistols"
+			subCategory = "Revolver"
+		} else if category == "Shotguns" {
+			mainCategory = "Shotguns"
+			// Determine subcategory based on model name - most are pump action by default
+			subCategory = "Pump-Action"
+		}
+
+		for _, modelName := range modelNames {
+			// Special case for shotguns - Benelli and Beretta are semi-auto
+			if category == "Shotguns" && (strings.Contains(modelName, "Benelli") || strings.Contains(modelName, "Beretta")) {
+				subCategory = "Semi-Auto"
+			}
+
+			// Create specifications
+			specs := map[string]interface{}{
+				"caliber": getDefaultCaliberForModel(modelName),
+				"weight":  fmt.Sprintf("%.1f lbs", 5+rand.Float64()*5),
+			}
+			specsJSON, _ := json.Marshal(specs)
+
+			// Get required parts
+			requiredParts := make(map[string]bool)
+
+			// Look for exact model match first
+			if template, ok := compatibilityTemplates[modelName]; ok {
+				for _, part := range template["required_parts"] {
+					requiredParts[part] = true
+				}
+			} else {
+				// Look for partial matches (e.g., "AR-15" template for "Colt AR-15")
+				var matched bool
+				for templateName, template := range compatibilityTemplates {
+					if strings.Contains(modelName, templateName) {
+						for _, part := range template["required_parts"] {
+							requiredParts[part] = true
+						}
+						matched = true
+						break
+					}
+				}
+
+				// If no template matched, use defaults based on category
+				if !matched {
+					switch mainCategory {
+					case "Rifles":
+						requiredParts = map[string]bool{
+							"Barrel":   true,
+							"Receiver": true,
+							"Bolt":     true,
+							"Stock":    true,
+							"Trigger":  true,
+							"Magazine": true,
+						}
+					case "Pistols":
+						if subCategory == "Revolver" {
+							requiredParts = map[string]bool{
+								"Frame":            true,
+								"Barrel":           true,
+								"Cylinder":         true,
+								"Trigger Assembly": true,
+								"Grips":            true,
+							}
+						} else {
+							requiredParts = map[string]bool{
+								"Slide":            true,
+								"Frame":            true,
+								"Barrel":           true,
+								"Recoil Spring":    true,
+								"Trigger Assembly": true,
+								"Magazine":         true,
+							}
+						}
+					case "Shotguns":
+						if subCategory == "Semi-Auto" {
+							requiredParts = map[string]bool{
+								"Receiver":      true,
+								"Barrel":        true,
+								"Gas System":    true,
+								"Bolt Assembly": true,
+								"Stock":         true,
+								"Trigger Group": true,
+							}
+						} else {
+							requiredParts = map[string]bool{
+								"Receiver":       true,
+								"Barrel":         true,
+								"Pump Mechanism": true,
+								"Magazine Tube":  true,
+								"Stock":          true,
+								"Trigger Group":  true,
+							}
+						}
+					}
+				}
+			}
+			requiredPartsJSON, _ := json.Marshal(requiredParts)
+
+			// Generate compatible parts
+			compatibleParts := map[string]bool{
+				"Sights":         true,
+				"Accessories":    true,
+				"Grips":          mainCategory != "Shotguns",
+				"Stocks":         true,
+				"Optics":         mainCategory == "Rifles" || mainCategory == "Shotguns",
+				"Magazines":      mainCategory != "Shotguns" && subCategory != "Revolver",
+				"Muzzle Devices": mainCategory == "Rifles" || (mainCategory == "Pistols" && subCategory != "Revolver"),
+			}
+			compatiblePartsJSON, _ := json.Marshal(compatibleParts)
+
+			// Generate images
+			images := []string{
+				fmt.Sprintf("https://example.com/images/firearms/%s.jpg", strings.ReplaceAll(modelName, " ", "-")),
+			}
+			imagesJSON, _ := json.Marshal(images)
+
+			// Generate price range
+			var minPrice, maxPrice int
+			switch mainCategory {
+			case "Rifles":
+				minPrice = 700 + rand.Intn(300)
+				maxPrice = minPrice + 300 + rand.Intn(700)
+			case "Pistols":
+				minPrice = 400 + rand.Intn(200)
+				maxPrice = minPrice + 200 + rand.Intn(400)
+			case "Shotguns":
+				minPrice = 500 + rand.Intn(200)
+				maxPrice = minPrice + 200 + rand.Intn(500)
+			}
+			priceRange := fmt.Sprintf("$%d - $%d", minPrice, maxPrice)
+
+			// Create the model
+			model := models.FirearmModel{
+				Name:            modelName,
+				Description:     fmt.Sprintf("A high-quality %s %s firearm.", subCategory, mainCategory),
+				Category:        mainCategory,
+				Subcategory:     subCategory,
+				Specifications:  datatypes.JSON(specsJSON),
+				RequiredParts:   datatypes.JSON(requiredPartsJSON),
+				CompatibleParts: datatypes.JSON(compatiblePartsJSON),
+				Images:          datatypes.JSON(imagesJSON),
+				PriceRange:      priceRange,
+			}
+
+			if err := DB.Create(&model).Error; err != nil {
+				log.Printf("Error seeding firearm model %s: %v", modelName, err)
+			}
+		}
+	}
+
+	// Seed Parts
+	log.Println("Seeding parts...")
+	for mainCategory, subCategories := range allParts {
+		for subCategory, parts := range subCategories {
+			for _, partName := range parts {
+				// Create compatible models list
+				compatibleModels := getCompatibleFirearms(mainCategory, subCategory, partName)
+				compatibleModelsJSON, _ := json.Marshal(compatibleModels)
+
+				// Create specifications
+				specifications := map[string]interface{}{
+					"subcategory": subCategory,
+				}
+				specificationsJSON, _ := json.Marshal(specifications)
+
+				part := models.Part{
+					Name:             partName,
+					Description:      "A quality " + partName + " for your firearm build.",
+					Category:         mainCategory,
+					Subcategory:      subCategory,
+					IsPrebuilt:       false,
+					CompatibleModels: datatypes.JSON(compatibleModelsJSON),
+					Specifications:   datatypes.JSON(specificationsJSON),
+					Availability:     "in_stock",
+					Price:            generatePrice(),
+					Weight:           0.5 + rand.Float64(),
+					Dimensions:       "5 x 3 x 2 in",
+				}
+
+				if err := DB.Create(&part).Error; err != nil {
+					log.Printf("Error seeding part %s: %v", partName, err)
+				}
+			}
+		}
+	}
+
+	// Seed Product Listings
+	log.Println("Seeding product listings...")
+	var parts []models.Part
+	DB.Find(&parts)
+
+	var sellers []models.Seller
+	DB.Find(&sellers)
+
+	for _, part := range parts {
+		// Create listings for 3-5 random sellers for each part
+		numSellers := 3 + rand.Intn(3)
+		selectedSellers := getRandomSellers(sellers, numSellers)
+
+		for _, seller := range selectedSellers {
+			shippingInfo := map[string]interface{}{
+				"free_shipping": rand.Float64() > 0.5,
+				"shipping_cost": 5.99 + rand.Float64()*15,
+				"handling_time": "1-3 business days",
+			}
+			shippingInfoJSON, _ := json.Marshal(shippingInfo)
+
+			listing := models.ProductListing{
+				SellerID:     seller.ID,
+				PartID:       &part.ID,
+				URL:          generateProductURL(seller.WebsiteURL, part.Name),
+				SKU:          generateSKU(seller.Name, part.Name),
+				Price:        generatePrice(),
+				Currency:     "USD",
+				Availability: generateAvailability(),
+				ShippingInfo: datatypes.JSON(shippingInfoJSON),
+				LastChecked:  time.Now(),
+			}
+
+			if err := DB.Create(&listing).Error; err != nil {
+				log.Printf("Error seeding product listing for part %s: %v", part.Name, err)
+			}
+		}
+	}
+
+	log.Println("Database seeding completed!")
+}
+
+// Helper functions
+func getCompatibleFirearms(category, subCategory, partName string) []string {
+	// Logic to determine which firearms are compatible with this part
+	// This is a simplified version - in reality, this would be more complex
+	switch category {
+	case "Upper Assembly":
+		return []string{"AR-15", "M4", "M16"}
+	case "Lower Assembly":
+		return []string{"AR-15", "M4", "M16"}
+	case "Furniture":
+		if strings.Contains(partName, "AR") || strings.Contains(partName, "M4") {
+			return []string{"AR-15", "M4", "M16"}
+		}
+		return []string{"Universal"}
+	default:
+		return []string{"Universal"}
+	}
+}
+
+func generateProductURL(baseURL, partName string) string {
+	slug := strings.ToLower(strings.ReplaceAll(partName, " ", "-"))
+	return baseURL + "/products/" + slug
+}
+
+func generateAvailability() string {
+	options := []string{"in_stock", "in_stock", "in_stock", "low_stock", "out_of_stock"}
+	return options[rand.Intn(len(options))]
+}
+
+func getRandomSellers(sellers []models.Seller, count int) []models.Seller {
+	if count > len(sellers) {
+		count = len(sellers)
+	}
+
+	// Create a copy of the sellers slice
+	shuffled := make([]models.Seller, len(sellers))
+	copy(shuffled, sellers)
+
+	// Fisher-Yates shuffle
+	for i := len(shuffled) - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	}
+
+	return shuffled[:count]
+}
+
+func generateSKU(sellerName, partName string) string {
+	return sellerName[:3] + "-" + partName[:3] + "-" + time.Now().Format("060102")
+}
+
+func generatePrice() float64 {
+	// Generate random price between $20 and $2000
+	return 20.0 + float64(time.Now().UnixNano()%198000)/100.0
+}

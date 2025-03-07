@@ -7,38 +7,36 @@ import (
 )
 
 // Part represents a firearm part or component in the database
-// @Description Detailed information about a firearm part including compatibility and restrictions
+// @Description Detailed information about a firearm part including compatibility and specifications
 type Part struct {
 	// Unique identifier for the part
 	ID int `json:"id" gorm:"primaryKey" example:"1"`
 
 	// Name of the part
-	Name string `json:"name" gorm:"size:255;not null" example:"Bolt Carrier Group"`
+	Name string `json:"name" gorm:"size:255;not null" example:"PMAG 30 AR/M4 GEN M3"`
 
-	// Main category of the part
-	Category string `json:"category" gorm:"size:100" example:"Upper Assembly"`
+	// Description of the part
+	Description string `json:"description" gorm:"type:text" example:"A 30-round 5.56x45 NATO polymer magazine for AR-15 rifles."`
 
-	// Subcategory for more specific classification
-	Subcategory string `json:"subcategory" gorm:"size:100" example:"Bolt Carrier Group"`
+	// Reference to the manufacturer
+	ManufacturerID int          `json:"manufacturer_id" gorm:"index" example:"1"`
+	Manufacturer   Manufacturer `json:"-" gorm:"foreignKey:ManufacturerID"`
+
+	// Reference to the part category
+	PartCategoryID *int          `json:"part_category_id,omitempty" gorm:"index" example:"18"`
+	PartCategory   *PartCategory `json:"part_category,omitempty" gorm:"foreignKey:PartCategoryID"`
 
 	// Whether this is a pre-built component
 	IsPrebuilt bool `json:"is_prebuilt" gorm:"default:false" example:"false"`
 
-	// List of sub-components that make up this part
-	// @Description JSON array of sub-component details
-	SubComponents datatypes.JSON `json:"sub_components" gorm:"type:jsonb" swaggertype:"string" example:"{\"pins\":[\"firing pin\",\"cam pin\"],\"springs\":[\"extractor spring\"]}"`
+	// Image URLs for the part
+	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg\"]"`
 
-	// List of required sub-components for this part
-	// @Description JSON array of required sub-component names
-	RequiredSubComponents datatypes.JSON `json:"required_sub_components" gorm:"type:jsonb" swaggertype:"string" example:"[\"bolt\",\"carrier\",\"firing pin\"]"`
+	// Weight of the part in pounds
+	Weight float64 `json:"weight" gorm:"type:decimal(6,2)" example:"0.54"`
 
-	// Compatibility information with other parts and models
-	// @Description JSON object containing compatibility rules
-	Compatibility datatypes.JSON `json:"compatibility" gorm:"type:jsonb" swaggertype:"string" example:"{\"firearm_models\":[\"AR-15\",\"M4\"],\"calibers\":[\"5.56 NATO\"]}"`
-
-	// Legal restrictions or requirements for this part
-	// @Description JSON object containing legal restriction details
-	LegalRestrictions datatypes.JSON `json:"legal_restrictions" gorm:"type:jsonb" swaggertype:"string" example:"{\"restricted_states\":[\"CA\",\"NY\"],\"license_required\":true}"`
+	// Dimensions of the part
+	Dimensions string `json:"dimensions" gorm:"size:50" example:"5 x 3 x 2 in"`
 
 	// Creation timestamp
 	CreatedAt time.Time `json:"created_at" gorm:"default:current_timestamp"`
