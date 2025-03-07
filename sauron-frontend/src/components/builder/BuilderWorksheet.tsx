@@ -599,78 +599,103 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
 
   // Handle selection of a part
   const handleSelectPart = (componentId: number, part: Part) => {
-    console.log(`Selecting part ${part.id} (${part.name}) for component ${componentId}`);
+    console.log(`Selected part: ${part.name} for component ID: ${componentId}`);
     
-    // Find the component in our structure
-    const findComponentById = (items: ComponentItem[]): boolean => {
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.id === componentId) {
-          item.selectedPart = part;
-          
-          // If this component has category_id, update the part's category_id too (if not already set)
-          if (item.part_category_id && !part.part_category_id) {
-            console.log(`Setting part ${part.id} category_id to ${item.part_category_id}`);
-            part.part_category_id = item.part_category_id;
-          }
-          
-          return true;
-        }
-        if (item.subComponents && item.subComponents.length > 0) {
-          if (findComponentById(item.subComponents)) {
+    // Check if this is a pre-built component (assembly)
+    if (part.is_prebuilt) {
+      console.log(`Selected part is a pre-built assembly, using handleSelectAssembly instead`);
+      handleSelectAssembly(componentId, part);
+      return;
+    }
+    
+    setComponentStructure(prevStructure => {
+      // Create a new copy of the structure to modify
+      const newStructure = [...prevStructure];
+      
+      // Find the component in our structure
+      const findComponentById = (items: ComponentItem[]): boolean => {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].id === componentId) {
+            // Found the component, update its selected part
+            items[i].selectedPart = part;
+            
+            // Update stored state
+            updateStoredComponent(firearmId, componentId, part, false);
+            console.log('Builder state updated in localStorage');
+            
             return true;
           }
+          
+          if (items[i].subComponents && items[i].subComponents.length > 0) {
+            if (findComponentById(items[i].subComponents)) {
+              return true;
+            }
+          }
         }
-      }
-      return false;
-    };
-    
-    const found = findComponentById(componentStructure);
-    
-    if (found) {
-      console.log(`Component ${componentId} found and updated`);
-      
-      // Update stored state
-      updateStoredComponent(firearmId, componentId, part, false);
-      console.log('Builder state updated in localStorage');
-    } else {
-      console.error(`Component with ID ${componentId} not found in the component structure`);
-      
-      // If we're coming from a URL parameter and can't find the exact component,
-      // try to find a component with a matching category name
-      if (part && part.category) {
-        console.log(`Attempting to find a component matching category: ${part.category}`);
         
+        return false;
+      };
+      
+      // Try to find the component by ID first
+      const found = findComponentById(newStructure);
+      
+      if (!found) {
+        console.error(`Could not find component with ID ${componentId} to update`);
+        
+        // Try to find by category instead (fallback)
         const findComponentIdByCategory = (items: ComponentItem[]): number | null => {
-          for (const item of items) {
-            if (item.category.toLowerCase() === part.category.toLowerCase()) {
-              console.log(`Found matching component by category:`, item);
-              return item.id;
+          for (let i = 0; i < items.length; i++) {
+            // Check for category match using various possible fields
+            if ((items[i].part_category_id && items[i].part_category_id === part.part_category_id) ||
+                (items[i].category === part.category && items[i].subcategory === part.subcategory)) {
+              return items[i].id;
             }
             
-            if (item.subComponents && item.subComponents.length > 0) {
-              const foundId = findComponentIdByCategory(item.subComponents);
-              if (foundId !== null) {
-                return foundId;
+            if (items[i].subComponents && items[i].subComponents.length > 0) {
+              const subComponentId = findComponentIdByCategory(items[i].subComponents);
+              if (subComponentId !== null) {
+                return subComponentId;
               }
             }
           }
+          
           return null;
         };
         
-        const matchingComponentId = findComponentIdByCategory(componentStructure);
+        const matchingComponentId = findComponentIdByCategory(newStructure);
         
         if (matchingComponentId !== null) {
-          console.log(`Using matching component ID: ${matchingComponentId} instead of ${componentId}`);
-          // Update the componentId
-          return handleSelectPart(matchingComponentId, part);
-        } else {
-          console.error(`No matching component found for category: ${part.category}`);
+          console.log(`Found component by category match: ${matchingComponentId}`);
+          
+          // Now that we found the correct component, update it
+          const updateComponentById = (items: ComponentItem[], id: number): boolean => {
+            for (let i = 0; i < items.length; i++) {
+              if (items[i].id === id) {
+                items[i].selectedPart = part;
+                
+                // Update stored state
+                updateStoredComponent(firearmId, id, part, false);
+                console.log('Builder state updated in localStorage (via category match)');
+                
+                return true;
+              }
+              
+              if (items[i].subComponents && items[i].subComponents.length > 0) {
+                if (updateComponentById(items[i].subComponents, id)) {
+                  return true;
+                }
+              }
+            }
+            
+            return false;
+          };
+          
+          updateComponentById(newStructure, matchingComponentId);
         }
       }
       
-      return; // Exit if no component found
-    }
+      return newStructure;
+    });
   };
 
   // Handle selection of an assembly
@@ -833,15 +858,16 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     // Preserve the state of componentId for when we return from catalog
     console.log(`Adding part for component: ${component.name}, ID: ${component.id}, category ID: ${component.part_category_id}`);
     
-    // Check if we should navigate to the catalog or not
-    if (component.selectedPart && (!component.partData || !component.partData.is_prebuilt)) {
-      console.log('User selected to replace an existing non-assembly part');
-    }
+    // Check if the component has children - if so, we should show assemblies by default
+    const hasChildren = component.subComponents && component.subComponents.length > 0;
+    const showAssemblies = hasChildren && !component.selectedPart;
+    
+    console.log(`Component ${component.name} has children: ${hasChildren}, showing assemblies: ${showAssemblies}`);
     
     // Create the query parameters for catalog page
     const queryParams = new URLSearchParams({
       componentId: component.id.toString(),
-      isAssembly: 'false',
+      isAssembly: showAssemblies ? 'true' : 'false',
       firearmId,
       returnToBuilder: 'true'
     });
@@ -870,9 +896,10 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     router.push(catalogUrl);
   };
 
-  // Open assembly selection page
+  // Open assembly selection page - only used internally now, as handleSelectPart delegates to this for prebuilt parts
   const handleAddAssembly = (component: ComponentItem) => {
-    // Preserve the state of componentId for when we return from catalog
+    // Legacy code left for reference, but functionality now handled by handleAddPart
+    // with isAssembly parameter dynamically set based on component having children
     console.log(`Adding assembly for component: ${component.name}, ID: ${component.id}, category ID: ${component.part_category_id}`);
     
     // Create the query parameters for catalog page
@@ -1189,6 +1216,10 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       const isFulfilledByAssembly = component.selectedPart && 
                                    (component.selectedPart as any).fulfilled_by_assembly === true;
       
+      if (isFulfilledByAssembly) {
+        console.log(`Component ${component.name} (ID: ${component.id}) is fulfilled by parent assembly: ${(component.selectedPart as any).parent_assembly_id}`);
+      }
+      
       // Determine the indentation class for this level
       // Fixed indentation classes that will be recognized by Tailwind
       let indentClass = '';
@@ -1280,16 +1311,9 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
                   onClick={() => handleAddPart(component)}
                   className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
                 >
-                  {component.selectedPart ? 'Change Part' : 'Add Part'}
-                </button>
-              )}
-              
-              {hasAssemblyOption && !isFulfilledByAssembly && (
-                <button
-                  onClick={() => handleAddAssembly(component)}
-                  className="px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
-                >
-                  {component.selectedPart && component.isPrebuilt ? 'Change Assembly' : 'Add Assembly'}
+                  {component.selectedPart 
+                    ? 'Change Part' 
+                    : (hasSubComponents ? 'Add Assembly' : 'Add Part')}
                 </button>
               )}
             </div>
