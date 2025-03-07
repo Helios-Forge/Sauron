@@ -100,257 +100,174 @@ var legacyPartCategories = map[string][]string{
 }
 
 // Define part categories for the new schema
-// var categoryData = []models.PartCategory{
-//     // Top-level categories
-//     { ... },
-//     // Lower Assembly Sub-Categories
-//     { ... },
-//     // ... other categories ...
-// }
+var categoryData = []models.PartCategory{
+	// Top-level categories
+	{
+		ID:          1,
+		Name:        "Lower Assembly",
+		Description: "Core lower receiver components",
+	},
+	{
+		ID:          2,
+		Name:        "Upper Assembly",
+		Description: "Core upper receiver components",
+	},
+	{
+		ID:          17,
+		Name:        "Miscellaneous Accessories",
+		Description: "Optional accessories",
+	},
+	{
+		ID:          18,
+		Name:        "Magazines and Feeding Devices",
+		Description: "Magazine options",
+	},
+	{
+		ID:          19,
+		Name:        "Rails and Mounting Accessories",
+		Description: "Mounting systems",
+	},
+
+	// Lower Assembly Sub-Categories
+	{
+		ID:               3,
+		Name:             "Grip",
+		ParentCategoryID: intPtr(1),
+		Description:      "Pistol grip components",
+	},
+	{
+		ID:               4,
+		Name:             "Bolt Catch",
+		ParentCategoryID: intPtr(1),
+		Description:      "Bolt catch mechanism",
+	},
+	{
+		ID:               5,
+		Name:             "Buffer System",
+		ParentCategoryID: intPtr(1),
+		Description:      "Buffer and recoil components",
+	},
+	{
+		ID:               6,
+		Name:             "Lower Receiver",
+		ParentCategoryID: intPtr(1),
+		Description:      "Lower receiver structure",
+	},
+	{
+		ID:               7,
+		Name:             "Magazine Release",
+		ParentCategoryID: intPtr(1),
+		Description:      "Magazine release mechanism",
+	},
+	{
+		ID:               8,
+		Name:             "Trigger Assembly",
+		ParentCategoryID: intPtr(1),
+		Description:      "Trigger and fire control components",
+	},
+	{
+		ID:               9,
+		Name:             "Fire Control Group",
+		ParentCategoryID: intPtr(1),
+		Description:      "Safety and selector components",
+	},
+
+	// Upper Assembly Sub-Categories
+	{
+		ID:               10,
+		Name:             "Barrel",
+		ParentCategoryID: intPtr(2),
+		Description:      "Barrel and gas system components",
+	},
+	{
+		ID:               11,
+		Name:             "Gas System",
+		ParentCategoryID: intPtr(2),
+		Description:      "Gas operation components",
+	},
+	{
+		ID:               12,
+		Name:             "Upper Receiver",
+		ParentCategoryID: intPtr(2),
+		Description:      "Upper receiver structure",
+	},
+	{
+		ID:               13,
+		Name:             "Bolt Carrier Group",
+		ParentCategoryID: intPtr(2),
+		Description:      "Bolt and carrier components",
+	},
+	{
+		ID:               14,
+		Name:             "Handguard/Foregrip",
+		ParentCategoryID: intPtr(2),
+		Description:      "Handguard and rail components",
+	},
+
+	// Deeper Sub-Categories
+	{
+		ID:               15,
+		Name:             "Grip Screw",
+		ParentCategoryID: intPtr(3),
+		Description:      "Screw for securing grip",
+	},
+	{
+		ID:               16,
+		Name:             "Bolt",
+		ParentCategoryID: intPtr(13),
+		Description:      "Bolt component of BCG",
+	},
+
+	// Compatible Sub-Categories
+	{
+		ID:               20,
+		Name:             "Slings",
+		ParentCategoryID: intPtr(17),
+		Description:      "Sling attachments",
+	},
+	{
+		ID:               21,
+		Name:             "Rail Systems",
+		ParentCategoryID: intPtr(19),
+		Description:      "Rail mounting options",
+	},
+	{
+		ID:               22,
+		Name:             "Two-Point Sling",
+		ParentCategoryID: intPtr(20),
+		Description:      "Two-point sling option",
+	},
+}
 
 // Helper function to create pointer to int
-// func intPtr(i int) *int {
-//     return &i
-// }
+func intPtr(i int) *int {
+	return &i
+}
 
-// SeedCategoriesAndRelationships populates the new schema tables with data
-// func SeedCategoriesAndRelationships() {
-//     log.Println("Seeding part categories and relationships...")
-//
-//     // Insert part categories
-//     for _, category := range categoryData {
-//         // Check if category already exists
-//         var count int64
-//         DB.Model(&models.PartCategory{}).Where("id = ?", category.ID).Count(&count)
-//
-//         if count == 0 {
-//             result := DB.Create(&category)
-//             if result.Error != nil {
-//                 log.Printf("Error creating part category %s: %v", category.Name, result.Error)
-//             } else {
-//                 log.Printf("Created part category: %s", category.Name)
-//             }
-//         } else {
-//             log.Printf("Part category already exists: %s", category.Name)
-//         }
-//     }
-//
-//     // Process all firearm models to create category relationships
-//     var firearmModels []models.FirearmModel
-//     if err := DB.Find(&firearmModels).Error; err != nil {
-//         log.Printf("Error fetching firearm models: %v", err)
-//         return
-//     }
-//
-//     for _, model := range firearmModels {
-//         // For each model, extract categories from JSONB data and create relationships
-//         MigrateFirearmModelCategories(model)
-//     }
-//
-//     // Process all parts to associate them with categories
-//     var parts []models.Part
-//     if err := DB.Find(&parts).Error; err != nil {
-//         log.Printf("Error fetching parts: %v", err)
-//         return
-//     }
-//
-//     for _, part := range parts {
-//         // For each part, associate with a category
-//         MigratePartCategory(part)
-//     }
-//
-//     log.Println("Part category and relationship seeding completed")
-// }
-//
-// // MigrateFirearmModelCategories extracts categories from JSONB and creates relationships
-// func MigrateFirearmModelCategories(model models.FirearmModel) {
-//     log.Printf("Migrating categories for firearm model: %s (ID: %d)", model.Name, model.ID)
-//
-//     // Extract required parts from Parts JSONB
-//     var partsData map[string]interface{}
-//     if err := json.Unmarshal([]byte(model.Parts.String()), &partsData); err != nil {
-//         log.Printf("Error unmarshaling Parts JSON for model %s: %v", model.Name, err)
-//         return
-//     }
-//
-//     // For each top-level category in Parts
-//     for categoryName, data := range partsData {
-//         // Find category in our part_categories table
-//         var category models.PartCategory
-//         if err := DB.Where("name = ?", categoryName).First(&category).Error; err != nil {
-//             log.Printf("Category not found: %s", categoryName)
-//             continue
-//         }
-//
-//         // Create relationship
-//         relationship := models.FirearmModelPartCategory{
-//             FirearmModelID: model.ID,
-//             PartCategoryID: category.ID,
-//             IsRequired:     true, // Parts from the Parts field are required
-//         }
-//
-//         // Check if relationship already exists
-//         var count int64
-//         DB.Model(&models.FirearmModelPartCategory{}).
-//             Where("firearm_model_id = ? AND part_category_id = ?", relationship.FirearmModelID, relationship.PartCategoryID).
-//             Count(&count)
-//
-//         if count == 0 {
-//             if err := DB.Create(&relationship).Error; err != nil {
-//                 log.Printf("Error creating relationship for model %s, category %s: %v", model.Name, category.Name, err)
-//             } else {
-//                 log.Printf("Created required relationship: %s -> %s", model.Name, category.Name)
-//             }
-//         }
-//
-//         // Process sub-parts recursively if present
-//         categoriesDataMap, ok := data.(map[string]interface{})
-//         if !ok {
-//             continue
-//         }
-//
-//         subPartsData, hasSubParts := categoriesDataMap["sub_parts"].(map[string]interface{})
-//         if hasSubParts {
-//             for subCategoryName := range subPartsData {
-//                 var subCategory models.PartCategory
-//                 if err := DB.Where("name = ?", subCategoryName).First(&subCategory).Error; err != nil {
-//                     log.Printf("Subcategory not found: %s", subCategoryName)
-//                     continue
-//                 }
-//
-//                 subRelationship := models.FirearmModelPartCategory{
-//                     FirearmModelID: model.ID,
-//                     PartCategoryID: subCategory.ID,
-//                     IsRequired:     true,
-//                 }
-//
-//                 DB.Model(&models.FirearmModelPartCategory{}).
-//                     Where("firearm_model_id = ? AND part_category_id = ?", subRelationship.FirearmModelID, subRelationship.PartCategoryID).
-//                     Count(&count)
-//
-//                 if count == 0 {
-//                     if err := DB.Create(&subRelationship).Error; err != nil {
-//                         log.Printf("Error creating relationship for model %s, subcategory %s: %v", model.Name, subCategory.Name, err)
-//                     } else {
-//                         log.Printf("Created required relationship: %s -> %s", model.Name, subCategory.Name)
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//
-//     // Extract optional parts from CompatibleParts JSONB
-//     var compatiblePartsData map[string]interface{}
-//     if err := json.Unmarshal([]byte(model.CompatibleParts.String()), &compatiblePartsData); err != nil {
-//         log.Printf("Error unmarshaling CompatibleParts JSON for model %s: %v", model.Name, err)
-//         return
-//     }
-//
-//     // For each top-level category in CompatibleParts
-//     for categoryName, data := range compatiblePartsData {
-//         var category models.PartCategory
-//         if err := DB.Where("name = ?", categoryName).First(&category).Error; err != nil {
-//             log.Printf("Category not found: %s", categoryName)
-//             continue
-//         }
-//
-//         // Create relationship
-//         relationship := models.FirearmModelPartCategory{
-//             FirearmModelID: model.ID,
-//             PartCategoryID: category.ID,
-//             IsRequired:     false, // Parts from CompatibleParts are optional
-//         }
-//
-//         // Check if relationship already exists
-//         var count int64
-//         DB.Model(&models.FirearmModelPartCategory{}).
-//             Where("firearm_model_id = ? AND part_category_id = ?", relationship.FirearmModelID, relationship.PartCategoryID).
-//             Count(&count)
-//
-//         if count == 0 {
-//             if err := DB.Create(&relationship).Error; err != nil {
-//                 log.Printf("Error creating relationship for model %s, category %s: %v", model.Name, category.Name, err)
-//             } else {
-//                 log.Printf("Created optional relationship: %s -> %s", model.Name, category.Name)
-//             }
-//         }
-//
-//         // Process subcategories
-//         subCategoriesMap, ok := data.(map[string]interface{})
-//         if !ok {
-//             continue
-//         }
-//
-//         for subCategoryName := range subCategoriesMap {
-//             var subCategory models.PartCategory
-//             if err := DB.Where("name = ?", subCategoryName).First(&subCategory).Error; err != nil {
-//                 log.Printf("Subcategory not found: %s", subCategoryName)
-//                 continue
-//             }
-//
-//             subRelationship := models.FirearmModelPartCategory{
-//                 FirearmModelID: model.ID,
-//                 PartCategoryID: subCategory.ID,
-//                 IsRequired:     false,
-//             }
-//
-//             DB.Model(&models.FirearmModelPartCategory{}).
-//                 Where("firearm_model_id = ? AND part_category_id = ?", subRelationship.FirearmModelID, subRelationship.PartCategoryID).
-//                 Count(&count)
-//
-//             if count == 0 {
-//                 if err := DB.Create(&subRelationship).Error; err != nil {
-//                     log.Printf("Error creating relationship for model %s, subcategory %s: %v", model.Name, subCategory.Name, err)
-//                 } else {
-//                     log.Printf("Created optional relationship: %s -> %s", model.Name, subCategory.Name)
-//                 }
-//             }
-//         }
-//     }
-// }
-//
-// // MigratePartCategory associates a part with a category based on its Category/Subcategory fields
-// func MigratePartCategory(part models.Part) {
-//     log.Printf("Migrating part %s (ID: %d) to category", part.Name, part.ID)
-//
-//     // If part already has a part_category_id, skip
-//     if part.PartCategoryID != nil {
-//         log.Printf("Part %s already has category ID %d", part.Name, *part.PartCategoryID)
-//         return
-//     }
-//
-//     // Look for a category matching the part's subcategory first (more specific)
-//     if part.Subcategory != "" {
-//         var category models.PartCategory
-//         if err := DB.Where("name = ?", part.Subcategory).First(&category).Error; err == nil {
-//             // Found a matching category for subcategory
-//             part.PartCategoryID = &category.ID
-//             if err := DB.Save(&part).Error; err != nil {
-//                 log.Printf("Error associating part %s with subcategory %s: %v", part.Name, part.Subcategory, err)
-//             } else {
-//                 log.Printf("Associated part %s with subcategory %s", part.Name, part.Subcategory)
-//             }
-//             return
-//         }
-//     }
-//
-//     // If no subcategory match, try with the main category
-//     if part.Category != "" {
-//         var category models.PartCategory
-//         if err := DB.Where("name = ?", part.Category).First(&category).Error; err == nil {
-//             // Found a matching category
-//             part.PartCategoryID = &category.ID
-//             if err := DB.Save(&part).Error; err != nil {
-//                 log.Printf("Error associating part %s with category %s: %v", part.Name, part.Category, err)
-//             } else {
-//                 log.Printf("Associated part %s with category %s", part.Name, part.Category)
-//             }
-//             return
-//         }
-//     }
-//
-//     log.Printf("No matching category found for part %s (category: %s, subcategory: %s)", part.Name, part.Category, part.Subcategory)
-// }
+// SeedCategoriesAndRelationships creates part categories in the database
+func SeedCategoriesAndRelationships() {
+	log.Println("Seeding part categories...")
+
+	// Insert part categories
+	for _, category := range categoryData {
+		// Check if category already exists
+		var count int64
+		DB.Model(&models.PartCategory{}).Where("id = ?", category.ID).Count(&count)
+
+		if count == 0 {
+			result := DB.Create(&category)
+			if result.Error != nil {
+				log.Printf("Error creating part category %s: %v", category.Name, result.Error)
+			} else {
+				log.Printf("Created part category: %s", category.Name)
+			}
+		} else {
+			log.Printf("Part category already exists: %s", category.Name)
+		}
+	}
+
+	log.Println("Part category seeding completed")
+}
 
 // getDefaultCaliberForModel returns appropriate caliber based on the firearm model name
 func getDefaultCaliberForModel(modelName string) string {
@@ -520,13 +437,6 @@ func seedFirearmModels() {
 	specsJSON, _ := json.Marshal(specs)
 	log.Printf("DEBUG: Created specifications JSON: %s", string(specsJSON))
 
-	// Get hierarchical parts structure and compatible parts
-	partsJSON := getPartsJSON(modelName)
-	log.Printf("DEBUG: Created parts JSON length: %d bytes", len(partsJSON))
-
-	compatiblePartsJSON := getCompatiblePartsJSON(modelName)
-	log.Printf("DEBUG: Created compatible parts JSON length: %d bytes", len(compatiblePartsJSON))
-
 	// Create image URLs
 	images := []string{
 		"https://example.com/images/firearms/AR-15.jpg",
@@ -540,41 +450,88 @@ func seedFirearmModels() {
 
 	log.Println("DEBUG: Creating FirearmModel struct...")
 
-	// Use a direct SQL query to insert the model, this allows us to set both 'parts' and 'required_parts'
-	// fields to handle the case where the database schema has both columns
-	query := `
-	INSERT INTO firearm_models (
-		name, description, manufacturer_id, category, subcategory, variant, 
-		specifications, parts, compatible_parts, images, price_range, 
-		required_parts, created_at, updated_at
-	) VALUES (
-		?, ?, ?, ?, ?, ?,
-		?, ?, ?, ?, ?,
-		?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-	) RETURNING id
-	`
+	// Create a FirearmModel instance using the new schema
+	firearmModel := models.FirearmModel{
+		Name:           modelName,
+		Description:    "A high-quality semi-automatic modular rifle platform.",
+		ManufacturerID: manufacturer.ID,
+		Category:       mainCategory,
+		Subcategory:    subCategory,
+		Variant:        variant,
+		Specifications: datatypes.JSON(specsJSON),
+		Images:         datatypes.JSON(imagesJSON),
+		PriceRange:     priceRange,
+	}
 
-	var id int
-	err := DB.Raw(query,
-		modelName,
-		"A high-quality semi-automatic modular rifle platform.",
-		manufacturer.ID,
-		mainCategory,
-		subCategory,
-		variant,
-		datatypes.JSON(specsJSON),
-		datatypes.JSON(partsJSON),
-		datatypes.JSON(compatiblePartsJSON),
-		datatypes.JSON(imagesJSON),
-		priceRange,
-		datatypes.JSON(partsJSON), // Use the same parts JSON for required_parts
-	).Scan(&id).Error
-
+	// Save the model to get an ID
+	err := DB.Create(&firearmModel).Error
 	if err != nil {
 		log.Printf("ERROR: Failed to seed firearm model %s: %v", modelName, err)
 		return
-	} else {
-		log.Printf("SUCCESS: Created firearm model: %s with ID: %d", modelName, id)
+	}
+
+	log.Printf("SUCCESS: Created firearm model: %s with ID: %d", modelName, firearmModel.ID)
+
+	// Now we need to create the part category relationships using the new schema
+	// Instead of using the parts JSON directly, we'll create relationships with part categories
+
+	// Get the part categories we want to associate with this model
+	var partCategories []models.PartCategory
+	err = DB.Find(&partCategories).Error
+	if err != nil {
+		log.Printf("ERROR: Failed to fetch part categories: %v", err)
+		return
+	}
+
+	// Create relationships for top-level categories that should be associated with AR-15
+	topLevelCategories := []string{"Lower Assembly", "Upper Assembly", "Magazines and Feeding Devices", "Rails and Mounting Accessories", "Miscellaneous Accessories"}
+
+	for _, categoryName := range topLevelCategories {
+		var category models.PartCategory
+		if err := DB.Where("name = ?", categoryName).First(&category).Error; err != nil {
+			log.Printf("WARNING: Could not find category: %s", categoryName)
+			continue
+		}
+
+		// Create the relationship with isRequired flag
+		isRequired := (categoryName == "Lower Assembly" || categoryName == "Upper Assembly")
+
+		relationship := models.FirearmModelPartCategory{
+			FirearmModelID: firearmModel.ID,
+			PartCategoryID: category.ID,
+			IsRequired:     isRequired,
+		}
+
+		if err := DB.Create(&relationship).Error; err != nil {
+			log.Printf("ERROR: Failed to create relationship for category %s: %v", categoryName, err)
+		} else {
+			log.Printf("SUCCESS: Associated model %s with category %s (required: %v)", modelName, categoryName, isRequired)
+		}
+
+		// If this is a top-level category that should have child categories associated too
+		if categoryName == "Lower Assembly" || categoryName == "Upper Assembly" {
+			// Find child categories
+			var childCategories []models.PartCategory
+			if err := DB.Where("parent_category_id = ?", category.ID).Find(&childCategories).Error; err != nil {
+				log.Printf("ERROR: Failed to fetch child categories for %s: %v", categoryName, err)
+				continue
+			}
+
+			// Associate all child categories
+			for _, childCategory := range childCategories {
+				childRelationship := models.FirearmModelPartCategory{
+					FirearmModelID: firearmModel.ID,
+					PartCategoryID: childCategory.ID,
+					IsRequired:     true, // Child categories are typically required
+				}
+
+				if err := DB.Create(&childRelationship).Error; err != nil {
+					log.Printf("ERROR: Failed to create relationship for child category %s: %v", childCategory.Name, err)
+				} else {
+					log.Printf("SUCCESS: Associated model %s with child category %s", modelName, childCategory.Name)
+				}
+			}
+		}
 	}
 
 	log.Println("DEBUG: seedFirearmModels() completed")
@@ -910,6 +867,22 @@ func seedParts() {
 		return
 	}
 
+	// Get part categories
+	var partCategories []models.PartCategory
+	DB.Find(&partCategories)
+
+	if len(partCategories) == 0 {
+		log.Println("No part categories found. Seeding part categories first.")
+		SeedCategoriesAndRelationships()
+		DB.Find(&partCategories)
+	}
+
+	// Create a map of category names to their IDs for easy lookup
+	categoryMap := make(map[string]int)
+	for _, category := range partCategories {
+		categoryMap[category.Name] = category.ID
+	}
+
 	// Create parts for AR-15 only
 	for mainCategory, subCategories := range AllParts {
 		for subCategory, parts := range subCategories {
@@ -917,108 +890,19 @@ func seedParts() {
 				// Select a random manufacturer
 				manufacturer := availableManufacturers[rand.Intn(len(availableManufacturers))]
 
-				// Create compatible models with the new format
-				var compatibleModels []map[string]interface{}
+				// Look up the part category ID
+				var partCategoryID *int
 
-				// Determine attachment point based on the category
-				attachmentPoint := "General"
-				if mainCategory == "Upper Assembly" {
-					attachmentPoint = "Upper Receiver"
-				} else if mainCategory == "Lower Assembly" {
-					attachmentPoint = "Lower Receiver"
+				// Try to find a category matching the subcategory first (more specific)
+				if categoryID, ok := categoryMap[subCategory]; ok {
+					partCategoryID = &categoryID
+				} else if categoryID, ok := categoryMap[mainCategory]; ok {
+					// Fall back to main category
+					partCategoryID = &categoryID
+				} else {
+					// If no match, log warning and continue
+					log.Printf("Warning: No category found for %s / %s. Creating part without category.", mainCategory, subCategory)
 				}
-
-				// All parts are compatible with AR-15
-				compatibleModels = append(compatibleModels, map[string]interface{}{
-					"model":            "AR-15",
-					"attachment_point": attachmentPoint,
-					"is_required":      false,
-				})
-
-				compatibleModelsJSON, _ := json.Marshal(compatibleModels)
-
-				// Create sub-components based on part type
-				var subComponents []map[string]string
-				// Add some default sub-components for specific parts
-				if strings.Contains(partName, "Charging Handle") {
-					subComponents = append(subComponents,
-						map[string]string{"name": "Charging Handle Latch", "type": "required"},
-						map[string]string{"name": "Charging Handle Spring", "type": "required"},
-					)
-				} else if strings.Contains(partName, "BCG") {
-					subComponents = append(subComponents,
-						map[string]string{"name": "Bolt", "type": "required"},
-						map[string]string{"name": "Carrier", "type": "required"},
-						map[string]string{"name": "Firing Pin", "type": "required"},
-					)
-				} else if partName == "Complete Lower Receiver (AR-15)" {
-					// Add all required sub-components for Complete Lower Receiver
-					subComponents = append(subComponents,
-						map[string]string{"name": "Stripped Lower Receiver (AR-15)", "type": "required"},
-						map[string]string{"name": "Mil-Spec Trigger (AR-15)", "type": "required"},
-						map[string]string{"name": "Standard Safety Selector (AR-15)", "type": "required"},
-						map[string]string{"name": "Standard Magazine Release (AR-15)", "type": "required"},
-						map[string]string{"name": "Standard Bolt Catch (AR-15)", "type": "required"},
-						map[string]string{"name": "Standard A2 Grip (AR-15)", "type": "required"},
-						map[string]string{"name": "M4 Collapsible Stock (AR-15)", "type": "required"},
-					)
-				}
-
-				subComponentsJSON, _ := json.Marshal(subComponents)
-
-				// Create requires fields - parts that this component depends on
-				var requires []map[string]interface{}
-				// Define requirements based on logical dependencies
-				if strings.Contains(partName, "Bolt") || strings.Contains(partName, "Charging Handle") {
-					requires = append(requires, map[string]interface{}{
-						"part_id": 0, // We'll leave this as 0 since we don't have real IDs yet
-						"name":    "Upper Receiver",
-					})
-				} else if strings.Contains(partName, "Barrel") {
-					requires = append(requires, map[string]interface{}{
-						"part_id": 0,
-						"name":    "Upper Receiver",
-					})
-				} else if strings.Contains(partName, "Trigger") {
-					requires = append(requires, map[string]interface{}{
-						"part_id": 0,
-						"name":    "Lower Receiver",
-					})
-				}
-
-				requiresJSON, _ := json.Marshal(requires)
-
-				// Create specifications
-				specifications := map[string]interface{}{
-					"subcategory": subCategory,
-				}
-
-				// Add specific specifications based on part type
-				if strings.Contains(partName, "Barrel") {
-					if strings.Contains(partName, "16\"") {
-						specifications["length"] = "16 inches"
-					} else if strings.Contains(partName, "14.5\"") {
-						specifications["length"] = "14.5 inches"
-					} else if strings.Contains(partName, "18\"") {
-						specifications["length"] = "18 inches"
-					} else if strings.Contains(partName, "20\"") {
-						specifications["length"] = "20 inches"
-					} else if strings.Contains(partName, "10.5\"") {
-						specifications["length"] = "10.5 inches"
-					}
-					specifications["caliber"] = "5.56x45mm NATO"
-					specifications["twist_rate"] = "1:7"
-					specifications["material"] = "4150 Chrome Moly Steel"
-				} else if strings.Contains(partName, "BCG") || strings.Contains(partName, "Bolt Carrier") {
-					specifications["finish"] = "Nickel Boron"
-					specifications["material"] = "8620 steel"
-					specifications["bolt_material"] = "9310 steel"
-				} else if strings.Contains(partName, "Buffer") {
-					specifications["weight"] = "3.0 oz"
-					specifications["material"] = "Aluminum/Steel"
-				}
-
-				specificationsJSON, _ := json.Marshal(specifications)
 
 				// Generate images
 				images := []string{
@@ -1028,27 +912,19 @@ func seedParts() {
 				imagesJSON, _ := json.Marshal(images)
 
 				part := models.Part{
-					Name:             partName,
-					Description:      "A quality " + partName + " for your AR-15 build.",
-					Category:         mainCategory,
-					Subcategory:      subCategory,
-					ManufacturerID:   manufacturer.ID,
-					IsPrebuilt:       false,
-					SubComponents:    datatypes.JSON(subComponentsJSON),
-					CompatibleModels: datatypes.JSON(compatibleModelsJSON),
-					Requires:         datatypes.JSON(requiresJSON),
-					Specifications:   datatypes.JSON(specificationsJSON),
-					Images:           datatypes.JSON(imagesJSON),
-					Availability:     "in_stock",
-					Price:            generatePrice(),
-					Weight:           0.5 + rand.Float64(),
-					Dimensions:       "5 x 3 x 2 in",
+					Name:           partName,
+					Description:    "A quality " + partName + " for your AR-15 build.",
+					ManufacturerID: manufacturer.ID,
+					PartCategoryID: partCategoryID,
+					IsPrebuilt:     false,
+					Images:         datatypes.JSON(imagesJSON),
+					Weight:         0.5 + rand.Float64(),
+					Dimensions:     "5 x 3 x 2 in",
 				}
 
 				// Set Complete Lower Receiver (AR-15) as prebuilt
 				if partName == "Complete Lower Receiver (AR-15)" {
 					part.IsPrebuilt = true
-					part.Price = generatePrice() * 1.5 // Prebuilt parts are more expensive
 					part.Description = "A completely assembled lower receiver for your AR-15 build, ready to be paired with an upper receiver."
 				}
 
@@ -1067,103 +943,72 @@ func seedParts() {
 
 // seedAssemblyParts creates prebuilt assembly parts with their sub-components
 func seedAssemblyParts(availableManufacturers []models.Manufacturer) {
-	// Use the assemblies defined in seed_data.go
-	for _, assembly := range AssemblyParts {
+	log.Println("Seeding assembly parts...")
+
+	// Get part categories
+	var partCategories []models.PartCategory
+	DB.Find(&partCategories)
+
+	// Create a map of category names to their IDs for easy lookup
+	categoryMap := make(map[string]int)
+	for _, category := range partCategories {
+		categoryMap[category.Name] = category.ID
+	}
+
+	// Sample prebuilt assemblies data
+	assemblies := []struct {
+		Name        string
+		Category    string
+		Subcategory string
+	}{
+		{
+			Name:        "Complete Upper Assembly (AR-15)",
+			Category:    "Upper Assembly",
+			Subcategory: "Complete Upper Assembly",
+		},
+		{
+			Name:        "Complete Lower Assembly (AR-15)",
+			Category:    "Lower Assembly",
+			Subcategory: "Complete Lower Assembly",
+		},
+		{
+			Name:        "Premium Bolt Carrier Group (AR-15)",
+			Category:    "Upper Assembly",
+			Subcategory: "Bolt Carrier Group",
+		},
+	}
+
+	for _, assembly := range assemblies {
 		// Select a random manufacturer
 		manufacturer := availableManufacturers[rand.Intn(len(availableManufacturers))]
 
-		// Convert the sub-components list to the new format
-		var subComponents []map[string]string
-		for _, componentName := range assembly.SubComponents {
-			subComponents = append(subComponents, map[string]string{
-				"name": componentName,
-				"type": "required",
-			})
-		}
-
-		subComponentsJSON, _ := json.Marshal(subComponents)
-
-		// Create compatible models with the new format
-		var compatibleModels []map[string]interface{}
-
-		// Determine attachment point based on the category
-		attachmentPoint := "General"
-		if assembly.Category == "Upper Assembly" {
-			attachmentPoint = "Upper Receiver"
-		} else if assembly.Category == "Lower Assembly" {
-			attachmentPoint = "Lower Receiver"
-		}
-
-		// All assembly parts are compatible with AR-15
-		compatibleModels = append(compatibleModels, map[string]interface{}{
-			"model":            "AR-15",
-			"attachment_point": attachmentPoint,
-			"is_required":      true,
-		})
-
-		compatibleModelsJSON, _ := json.Marshal(compatibleModels)
-
-		// Create requirements for this assembly
-		var requires []map[string]interface{}
-		if assembly.Category == "Upper Assembly" {
-			requires = append(requires, map[string]interface{}{
-				"part_id": 0, // We'll leave this as 0 since we don't have real IDs yet
-				"name":    "Lower Assembly",
-			})
-		} else if assembly.Category == "Lower Assembly" {
-			requires = append(requires, map[string]interface{}{
-				"part_id": 0,
-				"name":    "Upper Assembly",
-			})
-		}
-
-		requiresJSON, _ := json.Marshal(requires)
-
-		// Create specifications based on the assembly type
-		specifications := map[string]interface{}{
-			"subcategory": assembly.Subcategory,
-		}
-
-		if strings.Contains(assembly.Name, "Upper") {
-			specifications["finish"] = "Anodized"
-			specifications["material"] = "7075-T6 Aluminum"
-			if strings.Contains(assembly.Name, "16\"") {
-				specifications["barrel_length"] = "16 inches"
-			}
-		} else if strings.Contains(assembly.Name, "Lower") {
-			specifications["finish"] = "Anodized"
-			specifications["material"] = "7075-T6 Aluminum"
-			specifications["trigger_type"] = "Mil-Spec Single Stage"
-		} else if strings.Contains(assembly.Name, "BCG") {
-			specifications["finish"] = "Nickel Boron"
-			specifications["material"] = "Carpenter 158 Steel"
-		}
-
-		specificationsJSON, _ := json.Marshal(specifications)
-
-		// Create images for the assembly
+		// Generate images
 		images := []string{
 			fmt.Sprintf("https://example.com/images/parts/%s.jpg",
 				strings.ReplaceAll(assembly.Name, " ", "-")),
 		}
 		imagesJSON, _ := json.Marshal(images)
 
+		// Look up the part category ID
+		var partCategoryID *int
+
+		// Try to find a category matching the subcategory first (more specific)
+		if categoryID, ok := categoryMap[assembly.Subcategory]; ok {
+			partCategoryID = &categoryID
+		} else if categoryID, ok := categoryMap[assembly.Category]; ok {
+			// Fall back to main category
+			partCategoryID = &categoryID
+		}
+
 		part := models.Part{
-			Name:             assembly.Name,
-			Description:      "A complete " + assembly.Name + " with all necessary components.",
-			Category:         assembly.Category,
-			Subcategory:      assembly.Subcategory,
-			ManufacturerID:   manufacturer.ID,
-			IsPrebuilt:       true,
-			SubComponents:    datatypes.JSON(subComponentsJSON),
-			CompatibleModels: datatypes.JSON(compatibleModelsJSON),
-			Requires:         datatypes.JSON(requiresJSON),
-			Specifications:   datatypes.JSON(specificationsJSON),
-			Images:           datatypes.JSON(imagesJSON),
-			Availability:     generateAvailability(),
-			Price:            generatePrice() * 1.5, // Prebuilt assemblies are more expensive
-			Weight:           1.5 + rand.Float64(),
-			Dimensions:       "10 x 8 x 4 in",
+			Name:           assembly.Name,
+			Description:    "A complete " + assembly.Name + " with all necessary components.",
+			ManufacturerID: manufacturer.ID,
+			PartCategoryID: partCategoryID,
+			IsPrebuilt:     true,
+			Images:         datatypes.JSON(imagesJSON),
+			Weight:         1.5 + rand.Float64(),
+			Dimensions:     "10 x 8 x 4 in",
 		}
 
 		if result := DB.Create(&part); result.Error != nil {
@@ -1384,20 +1229,20 @@ func generateAvailability() string {
 
 // seedPrebuiltFirearms creates prebuilt firearm configurations
 func seedPrebuiltFirearms() {
-	// Get the AR-15 firearm model
-	var arModel models.FirearmModel
-	DB.Where("name = ?", "AR-15").First(&arModel)
+	log.Println("Seeding prebuilt firearms...")
 
-	if arModel.ID == 0 {
-		log.Println("AR-15 model not found. Cannot seed prebuilt firearms.")
+	// Get AR-15 model
+	var arModel models.FirearmModel
+	if err := DB.Where("name LIKE ?", "%AR-15%").First(&arModel).Error; err != nil {
+		log.Printf("Could not find AR-15 model, seeding prebuilt firearms failed: %v", err)
 		return
 	}
 
-	// Create one prebuilt configuration for the AR-15
-	prebuiltName := "Colt M4A1 Carbine"
-	description := "A premium pre-built AR-15 configuration featuring a 14.5-inch barrel and high-quality components."
+	// Create a basic prebuilt AR-15
+	prebuiltName := "Standard AR-15 Rifle" + getPrebuiltSuffix(1)
+	description := "A complete AR-15 rifle with all mil-spec components. Ready to fire out of the box."
 
-	// Create specifications
+	// Create specs
 	specs := map[string]interface{}{
 		"caliber":       "5.56x45mm NATO",
 		"weight":        "6.36 lbs",
@@ -1407,21 +1252,39 @@ func seedPrebuiltFirearms() {
 	}
 	specsJSON, _ := json.Marshal(specs)
 
-	// Parse the base parts structure
-	var basePartsStructure map[string]interface{}
-	json.Unmarshal([]byte(arModel.Parts), &basePartsStructure)
+	// Create a placeholder for parts structure
+	// (we'll use the category relationships instead of hardcoded JSON)
+	placeholderPartsStructure := map[string]interface{}{
+		"Upper Assembly": map[string]interface{}{
+			"type": "required",
+			"sub_parts": map[string]interface{}{
+				"Bolt Carrier Group": map[string]interface{}{
+					"type": "required",
+				},
+			},
+		},
+		"Lower Assembly": map[string]interface{}{
+			"type": "required",
+			"sub_parts": map[string]interface{}{
+				"Lower Parts Kit": map[string]interface{}{
+					"type": "required",
+				},
+			},
+		},
+	}
 
-	// Transform the structure to include IDs
-	prebuiltParts := addPartIDsToStructure(basePartsStructure)
-	partsJSON, _ := json.Marshal(prebuiltParts)
+	partsJSON, _ := json.Marshal(placeholderPartsStructure)
 
-	// Parse compatible parts
-	var compatiblePartsStructure map[string]interface{}
-	json.Unmarshal([]byte(arModel.CompatibleParts), &compatiblePartsStructure)
-
-	// Add IDs to compatible parts
-	prebuiltCompatibleParts := addCompatiblePartIDsToStructure(compatiblePartsStructure)
-	compatiblePartsJSON, _ := json.Marshal(prebuiltCompatibleParts)
+	// Create placeholder for compatible parts
+	placeholderCompatibleParts := map[string]interface{}{
+		"Magazines": map[string]interface{}{
+			"type": "optional",
+		},
+		"Sights": map[string]interface{}{
+			"type": "optional",
+		},
+	}
+	compatiblePartsJSON, _ := json.Marshal(placeholderCompatibleParts)
 
 	// Generate price
 	price := 1299.99
@@ -1468,76 +1331,6 @@ func getPrebuiltSuffix(index int) string {
 	}
 
 	return suffixes[index%len(suffixes)]
-}
-
-// Helper function to add random IDs to parts in the hierarchical structure
-func addPartIDsToStructure(structure map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-
-	for key, value := range structure {
-		if valueMap, ok := value.(map[string]interface{}); ok {
-			// This is a map (like Upper Assembly or Lower Assembly)
-			newMap := make(map[string]interface{})
-
-			// Add an ID for this assembly
-			assemblyID := rand.Intn(1000) + 1
-			newMap["id"] = assemblyID
-
-			// If it has a type, preserve it
-			if partType, hasType := valueMap["type"]; hasType {
-				newMap["type"] = partType
-			}
-
-			// Process sub_parts if they exist
-			if subParts, hasSubParts := valueMap["sub_parts"]; hasSubParts {
-				if subPartsMap, isMap := subParts.(map[string]interface{}); isMap {
-					// Process the sub_parts recursively if they are maps
-					newMap["sub_parts"] = addPartIDsToStructure(subPartsMap)
-				} else {
-					// Otherwise just preserve the sub_parts
-					newMap["sub_parts"] = subParts
-				}
-			}
-
-			result[key] = newMap
-		} else {
-			// Just a simple value, preserve it
-			result[key] = value
-		}
-	}
-
-	return result
-}
-
-// Helper function to add IDs to compatible parts
-func addCompatiblePartIDsToStructure(structure map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-
-	for key, value := range structure {
-		if valueMap, ok := value.(map[string]interface{}); ok {
-			// This is a map of accessory categories
-			newMap := make(map[string]interface{})
-
-			for subKey, subValue := range valueMap {
-				// For each item, add an ID about 50% of the time
-				if rand.Float64() < 0.5 {
-					newMap[subKey] = map[string]interface{}{
-						"id": rand.Intn(1000) + 1,
-					}
-				} else {
-					// Otherwise just preserve the value
-					newMap[subKey] = subValue
-				}
-			}
-
-			result[key] = newMap
-		} else {
-			// Just a simple value, preserve it
-			result[key] = value
-		}
-	}
-
-	return result
 }
 
 // Helper function to get random availability status

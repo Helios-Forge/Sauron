@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"sauron-backend/internal/models"
 
@@ -11,8 +12,8 @@ import (
 func WipeDatabase() error {
 	log.Println("Wiping database...")
 
-	// Disable foreign key checks while wiping
-	DB.Exec("SET FOREIGN_KEY_CHECKS = 0")
+	// Temporarily disable foreign key constraint checks for PostgreSQL
+	DB.Exec("SET session_replication_role = 'replica';")
 
 	// List of all models to wipe in a specific order due to dependencies
 	models := []interface{}{
@@ -20,9 +21,11 @@ func WipeDatabase() error {
 		&models.PartSellerLink{},
 		&models.PrebuiltSellerLink{},
 		&models.UserSuggestion{},
+		&models.FirearmModelPartCategory{}, // Must be deleted before FirearmModel and PartCategory
 		&models.Part{},
 		&models.PrebuiltFirearm{},
 		&models.FirearmModel{},
+		&models.PartCategory{}, // Delete after all tables that reference it
 		&models.Seller{},
 		&models.Manufacturer{},
 	}
@@ -31,13 +34,14 @@ func WipeDatabase() error {
 	for _, model := range models {
 		if err := DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(model).Error; err != nil {
 			log.Printf("Error wiping table for %T: %v", model, err)
-			return err
+			// Continue with other tables even if one fails
+			continue
 		}
 		log.Printf("Wiped table for %T", model)
 	}
 
-	// Re-enable foreign key checks
-	DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
+	// Re-enable foreign key constraint checks
+	DB.Exec("SET session_replication_role = 'origin';")
 
 	log.Println("Database wiping completed successfully")
 	return nil
@@ -93,4 +97,105 @@ func CleanOrphanedRecords() {
 	// Add additional cleanup as needed based on data model
 
 	log.Println("Orphaned records cleaning complete")
+}
+
+// ResetDatabase drops and recreates all tables
+func ResetDatabase() error {
+	log.Println("Completely resetting database schema...")
+
+	// Check if DB is initialized
+	if DB == nil {
+		return fmt.Errorf("database connection not initialized")
+	}
+
+	// Drop all tables using PostgreSQL's cascading drop feature
+	log.Println("Dropping ALL tables...")
+	result := DB.Exec(`
+		DO $$ DECLARE
+			r RECORD;
+		BEGIN
+			-- Disable triggers temporarily to avoid constraint errors
+			EXECUTE 'SET session_replication_role = ''replica''';
+			
+			FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP
+				EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+			END LOOP;
+			
+			-- Re-enable triggers
+			EXECUTE 'SET session_replication_role = ''origin''';
+		END $$;
+	`)
+
+	if result.Error != nil {
+		log.Printf("Error dropping tables: %v", result.Error)
+		return result.Error
+	}
+
+	// Create fresh schema with the new model definitions
+	log.Println("Creating fresh schema with updated models...")
+
+	// Migrate all tables in the proper order for foreign key constraints
+	err := DB.AutoMigrate(
+		&models.Manufacturer{},
+		&models.Seller{},
+		&models.PartCategory{},
+		&models.FirearmModel{},
+		&models.FirearmModelPartCategory{},
+		&models.Part{},
+		&models.PartSellerLink{},
+		&models.PrebuiltFirearm{},
+		&models.PrebuiltSellerLink{},
+		&models.UserSuggestion{},
+		&models.ProductListing{},
+	)
+	if err != nil {
+		log.Fatalf("Failed to create new schema: %v", err)
+		return err
+	}
+
+	// Add database constraints and indexes
+	log.Println("Adding constraints and indexes...")
+	addDatabaseConstraints()
+
+	log.Println("Database schema has been completely reset to the latest version")
+	return nil
+}
+
+// addDatabaseConstraints adds necessary constraints and indexes to the database
+func addDatabaseConstraints() {
+	// Add unique constraint for firearm_model_part_categories table
+	// PostgreSQL doesn't support IF NOT EXISTS for constraints directly, so we need to check if it exists first
+	var constraintExists int64
+	DB.Raw(`
+		SELECT COUNT(*) 
+		FROM pg_constraint 
+		WHERE conname = 'unique_model_category' 
+		AND conrelid = 'firearm_model_part_categories'::regclass
+	`).Count(&constraintExists)
+
+	// Only add if it doesn't exist
+	if constraintExists == 0 {
+		err := DB.Exec("ALTER TABLE firearm_model_part_categories ADD CONSTRAINT unique_model_category UNIQUE (firearm_model_id, part_category_id)").Error
+		if err != nil {
+			log.Printf("Warning: Failed to add unique constraint to firearm_model_part_categories: %v", err)
+		}
+	}
+
+	// Add additional indexes
+	indexes := []struct {
+		query string
+		name  string
+	}{
+		{"CREATE INDEX IF NOT EXISTS idx_part_categories_parent ON part_categories (parent_category_id)", "idx_part_categories_parent"},
+		{"CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_model ON firearm_model_part_categories (firearm_model_id)", "idx_firearm_model_part_categories_model"},
+		{"CREATE INDEX IF NOT EXISTS idx_firearm_model_part_categories_category ON firearm_model_part_categories (part_category_id)", "idx_firearm_model_part_categories_category"},
+		{"CREATE INDEX IF NOT EXISTS idx_parts_category ON parts (part_category_id)", "idx_parts_category"},
+	}
+
+	for _, idx := range indexes {
+		err := DB.Exec(idx.query).Error
+		if err != nil {
+			log.Printf("Warning: Failed to create index %s: %v", idx.name, err)
+		}
+	}
 }

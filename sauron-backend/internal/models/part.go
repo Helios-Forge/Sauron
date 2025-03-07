@@ -22,12 +22,6 @@ type Part struct {
 	ManufacturerID int          `json:"manufacturer_id" gorm:"index" example:"1"`
 	Manufacturer   Manufacturer `json:"-" gorm:"foreignKey:ManufacturerID"`
 
-	// Main category of the part (deprecated - to be removed after migration)
-	Category string `json:"category" gorm:"size:100" example:"Magazines"`
-
-	// Subcategory for more specific classification (deprecated - to be removed after migration)
-	Subcategory string `json:"subcategory" gorm:"size:100" example:"Polymer Magazines"`
-
 	// Reference to the part category
 	PartCategoryID *int          `json:"part_category_id,omitempty" gorm:"index" example:"18"`
 	PartCategory   *PartCategory `json:"part_category,omitempty" gorm:"foreignKey:PartCategoryID"`
@@ -35,26 +29,8 @@ type Part struct {
 	// Whether this is a pre-built component
 	IsPrebuilt bool `json:"is_prebuilt" gorm:"default:false" example:"false"`
 
-	// SubComponents that make up this part (for prebuilt parts)
-	SubComponents datatypes.JSON `json:"sub_components" gorm:"type:jsonb" swaggertype:"string" example:"[{\"name\": \"Charging Handle Latch\", \"type\": \"required\"}, {\"name\": \"Charging Handle Spring\", \"type\": \"required\"}]"`
-
-	// List of compatible firearm models with attachment points and requirement flags (to be simplified after migration)
-	CompatibleModels datatypes.JSON `json:"compatible_models" gorm:"type:jsonb" swaggertype:"string" example:"[{\"model\": \"AR-15\", \"attachment_point\": \"Upper Receiver\", \"is_required\": false}]"`
-
-	// Requirements for compatibility - parts this component depends on
-	Requires datatypes.JSON `json:"requires" gorm:"type:jsonb" swaggertype:"string" example:"[{\"part_id\": 1234, \"name\": \"Upper Receiver\"}]"`
-
-	// Specifications of the part
-	Specifications datatypes.JSON `json:"specifications" gorm:"type:jsonb" swaggertype:"string" example:"{\"material\": \"Aluminum\", \"finish\": \"Anodized\", \"length\": \"7 inches\", \"weight\": \"0.54 lbs\"}"`
-
 	// Image URLs for the part
 	Images datatypes.JSON `json:"images" gorm:"type:jsonb" swaggertype:"array,string" example:"[\"https://example.com/images/parts/Standard-Charging-Handle-(AR-15).jpg\"]"`
-
-	// Base price of the part
-	Price float64 `json:"price" gorm:"type:decimal(10,2)" example:"19.99"`
-
-	// Availability status
-	Availability string `json:"availability" gorm:"size:50" example:"in_stock"`
 
 	// Weight of the part in pounds
 	Weight float64 `json:"weight" gorm:"type:decimal(6,2)" example:"0.54"`

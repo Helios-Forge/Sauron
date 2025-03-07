@@ -8,6 +8,7 @@ import (
 	"sauron-backend/docs"
 	"sauron-backend/internal/api"
 	"sauron-backend/internal/db"
+	"time"
 
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
@@ -36,6 +37,7 @@ func main() {
 	// Define command line flags
 	seedFlag := flag.Bool("seed", false, "Seed the database with initial data")
 	wipeFlag := flag.Bool("wipe", false, "Wipe all data from the database")
+	resetFlag := flag.Bool("reset", false, "DANGER: Completely reset and rebuild the database schema (drops ALL tables and data)")
 	cleanFlag := flag.Bool("clean", false, "Clean orphaned records from the database")
 	statsFlag := flag.Bool("stats", false, "Display database statistics")
 	helpFlag := flag.Bool("help", false, "Display help information")
@@ -53,7 +55,8 @@ func main() {
 		fmt.Println("  main                    # Start the server normally")
 		fmt.Println("  main --seed             # Seed the database with initial data")
 		fmt.Println("  main --wipe             # Wipe all data from the database")
-		fmt.Println("  main --wipe --seed      # Wipe and then reseed the database")
+		fmt.Println("  main --reset            # DANGER: Completely reset the database (drops ALL tables)")
+		fmt.Println("  main --reset --seed     # Reset database and seed with fresh data")
 		fmt.Println("  main --stats            # Display database statistics")
 		fmt.Println("  main --clean            # Clean orphaned records")
 		return
@@ -65,7 +68,7 @@ func main() {
 	}
 
 	// Special handling for stats command - connect to DB but don't auto-seed
-	if *statsFlag && !(*seedFlag || *wipeFlag || *cleanFlag) {
+	if *statsFlag && !(*seedFlag || *wipeFlag || *resetFlag || *cleanFlag) {
 		// Just connect to DB without seeding
 		db.ConnectDB()
 
@@ -82,14 +85,50 @@ func main() {
 		return
 	}
 
-	// For all other commands, initialize DB normally (with potential auto-seeding)
-	db.InitDB()
+	// Initialize DB connection for all commands
+	if *resetFlag {
+		// For reset flag, just connect to the database without auto-seeding
+		db.ConnectDB()
+
+		fmt.Println("\n⚠️  WARNING: You are about to COMPLETELY RESET the database schema.")
+		fmt.Println("⚠️  This will DROP ALL TABLES and DELETE ALL DATA!")
+		fmt.Println("⚠️  Press Ctrl+C now to cancel, or wait 5 seconds to continue...\n")
+
+		// Wait 5 seconds to allow user to cancel
+		for i := 5; i > 0; i-- {
+			fmt.Printf("\rContinuing in %d seconds...", i)
+			time.Sleep(1 * time.Second)
+		}
+		fmt.Println("\rReset operation starting now...           ")
+
+		log.Println("Resetting database schema as requested...")
+		if err := db.ResetDatabase(); err != nil {
+			log.Fatalf("Error resetting database: %v", err)
+		}
+	} else {
+		// For all other commands, initialize DB normally (with potential auto-seeding)
+		db.InitDB()
+	}
 
 	// Handle database commands
 	handledCommand := false
 
+	// Handle reset flag - mark as handled since we already executed it
+	if *resetFlag {
+		handledCommand = true
+
+		// After reset, we should explicitly seed if requested,
+		// since the database is now empty
+		if *seedFlag {
+			log.Println("Seeding database after reset...")
+			db.SeedDatabase()
+			// Mark seed as handled so we don't do it twice
+			*seedFlag = false
+		}
+	}
+
 	// Handle wipe flag
-	if *wipeFlag {
+	if *wipeFlag && !*resetFlag {
 		log.Println("Wiping database as requested...")
 		if err := db.WipeDatabase(); err != nil {
 			log.Fatalf("Error wiping database: %v", err)
@@ -97,7 +136,7 @@ func main() {
 		handledCommand = true
 	}
 
-	// Handle seed flag
+	// Handle seed flag (unless we already did it after reset)
 	if *seedFlag {
 		log.Println("Seeding database as requested...")
 		db.SeedDatabase()
@@ -123,7 +162,7 @@ func main() {
 	}
 
 	// If we handled a command and there's no need to start the server, exit
-	if handledCommand && (*seedFlag || *wipeFlag || *cleanFlag || *statsFlag) {
+	if handledCommand && (*seedFlag || *wipeFlag || *resetFlag || *cleanFlag || *statsFlag) {
 		log.Println("Command(s) executed successfully")
 		return
 	}

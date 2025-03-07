@@ -170,10 +170,9 @@ func InitDB() {
 	log.Println("Database connection established and ready")
 }
 
-// MigrateSchema handles the migration of data from the old schema to the new relational schema
-// This includes populating part categories and creating relationships between tables
+// MigrateSchema handles database schema setup
 func MigrateSchema() {
-	log.Println("Running schema migration for categories and relationships...")
+	log.Println("Setting up database schema...")
 
 	// Check if we have any part categories already
 	var categoryCount int64
@@ -183,42 +182,10 @@ func MigrateSchema() {
 		log.Println("No part categories found - initializing category data...")
 		SeedCategoriesAndRelationships()
 	} else {
-		log.Printf("Found %d existing part categories, checking for unmigrated data...", categoryCount)
-
-		// Check if we have any unmigrated parts
-		var unmappedPartsCount int64
-		DB.Model(&models.Part{}).Where("part_category_id IS NULL").Count(&unmappedPartsCount)
-
-		if unmappedPartsCount > 0 {
-			log.Printf("Found %d parts without category mapping - migrating...", unmappedPartsCount)
-
-			var unmappedParts []models.Part
-			DB.Where("part_category_id IS NULL").Find(&unmappedParts)
-
-			for _, part := range unmappedParts {
-				MigratePartCategory(part)
-			}
-		}
-
-		// Check if we have any firearm models that need relationship migration
-		var firearmModels []models.FirearmModel
-		DB.Find(&firearmModels)
-
-		for _, model := range firearmModels {
-			// Check if this model has any category relationships
-			var relationCount int64
-			DB.Model(&models.FirearmModelPartCategory{}).
-				Where("firearm_model_id = ?", model.ID).
-				Count(&relationCount)
-
-			if relationCount == 0 {
-				log.Printf("Migrating categories for firearm model: %s (ID: %d)", model.Name, model.ID)
-				MigrateFirearmModelCategories(model)
-			}
-		}
+		log.Printf("Found %d existing part categories, no migration needed", categoryCount)
 	}
 
-	log.Println("Schema migration completed")
+	log.Println("Schema setup completed")
 }
 
 // Check if there's existing data in the database
@@ -230,20 +197,7 @@ func hasExistingData() bool {
 
 // Update existing data to match the new schema
 func updateExistingData() {
-	// Update existing parts that might have null compatible_models
-	var parts []models.Part
-	DB.Where("compatible_models IS NULL").Find(&parts)
-
-	for _, part := range parts {
-		// Create a default compatible_models value based on the category
-		compatibleModels := []string{"Universal"}
-		if part.Category == "Upper Assembly" || part.Category == "Lower Assembly" {
-			compatibleModels = []string{"AR-15", "M4", "M16"}
-		}
-
-		// Serialize to JSON and update
-		DB.Model(&part).Update("compatible_models", compatibleModels)
-	}
-
-	log.Printf("Updated %d parts with default compatible_models values", len(parts))
+	// This function has been deprecated as we've removed the compatible_models field
+	// We only keep it as a placeholder in case new schema migrations need to be done
+	log.Println("Schema has changed - no compatible_models field to update")
 }

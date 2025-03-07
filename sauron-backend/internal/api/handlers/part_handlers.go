@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"regexp"
 	"sauron-backend/internal/db"
 	"sauron-backend/internal/models"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -117,27 +115,94 @@ func GetPartsByCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, parts)
 }
 
-// Get compatible parts
+// Get parts compatible with a specific part
+// @Summary Get compatible parts
+// @Description Get parts that are compatible with a specific part
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Param id path int true "Part ID"
+// @Success 200 {array} models.Part
+// @Router /parts/{id}/compatible [get]
 func GetCompatibleParts(c *gin.Context) {
-	partID := c.Param("id")
+	partID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid part ID"})
+		return
+	}
 
-	// First get the part to find its compatible models
+	// First get the part and its category
 	var part models.Part
-	if err := db.DB.First(&part, partID).Error; err != nil {
+	if err := db.DB.Preload("PartCategory").First(&part, partID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Part not found"})
 		return
 	}
 
-	// Check if CompatibleModels is empty
-	if part.CompatibleModels == nil || len(part.CompatibleModels) == 0 {
+	// If no part_category_id, return an empty array - can't determine compatibility
+	if part.PartCategoryID == nil {
 		c.JSON(http.StatusOK, []models.Part{})
 		return
 	}
 
-	// Find all parts that are compatible with the same models
+	// Find all firearm models that this part category is used in
+	var compatibleFirearmModels []int
+	rows, err := db.DB.Raw(`
+		SELECT firearm_model_id 
+		FROM firearm_model_part_categories 
+		WHERE part_category_id = ?
+	`, *part.PartCategoryID).Rows()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find compatible models"})
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var modelID int
+		if err := rows.Scan(&modelID); err != nil {
+			continue
+		}
+		compatibleFirearmModels = append(compatibleFirearmModels, modelID)
+	}
+
+	if len(compatibleFirearmModels) == 0 {
+		// If no compatible models found, just return parts with the same category
+		var compatibleParts []models.Part
+		db.DB.Where("id != ?", partID).
+			Where("part_category_id = ?", *part.PartCategoryID).
+			Find(&compatibleParts)
+
+		c.JSON(http.StatusOK, compatibleParts)
+		return
+	}
+
+	// Find all part categories used by these firearm models
+	var compatibleCategoryIDs []int
+	rows, err = db.DB.Raw(`
+		SELECT DISTINCT part_category_id 
+		FROM firearm_model_part_categories 
+		WHERE firearm_model_id IN (?)
+	`, compatibleFirearmModels).Rows()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find compatible categories"})
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var categoryID int
+		if err := rows.Scan(&categoryID); err != nil {
+			continue
+		}
+		compatibleCategoryIDs = append(compatibleCategoryIDs, categoryID)
+	}
+
+	// Get all parts that are in these categories (excluding the original part)
 	var compatibleParts []models.Part
 	db.DB.Where("id != ?", partID).
-		Where("JSON_OVERLAPS(compatible_models, ?)", part.CompatibleModels).
+		Where("part_category_id IN (?)", compatibleCategoryIDs).
 		Find(&compatibleParts)
 
 	c.JSON(http.StatusOK, compatibleParts)
@@ -210,176 +275,106 @@ func GetSubcategoriesByCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, subcategories)
 }
 
-// Get all compatible firearm models from parts
+// GetCompatibleFirearmModels returns a list of unique firearm models that parts are compatible with
+// @Summary Get compatible firearm models
+// @Description Get a list of unique firearm models that parts are compatible with
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Success 200 {array} string
+// @Router /parts/compatible-models [get]
 func GetCompatibleFirearmModels(c *gin.Context) {
-	// This query directly extracts distinct model names from the compatible_models JSON array
-	// using PostgreSQL's JSON functions
+	// With our new schema, we simply need to fetch all distinct firearm model names
+	// from the firearm_models table that have associated part categories
+
+	var modelNames []string
 	rows, err := db.DB.Raw(`
-		SELECT DISTINCT jsonb_extract_path_text(cm.value, 'model') as model_name
-		FROM parts,
-		jsonb_array_elements(compatible_models) as cm
-		WHERE jsonb_extract_path_text(cm.value, 'model') != ''
+		SELECT DISTINCT fm.name 
+		FROM firearm_models fm
+		JOIN firearm_model_part_categories fmpc ON fm.id = fmpc.firearm_model_id
+		ORDER BY fm.name
 	`).Rows()
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query compatible models"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch compatible models"})
 		return
 	}
 	defer rows.Close()
 
-	var models []string
 	for rows.Next() {
 		var modelName string
 		if err := rows.Scan(&modelName); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process result"})
-			return
-		}
-		models = append(models, modelName)
-	}
-
-	c.JSON(http.StatusOK, models)
-}
-
-// Get a combined part hierarchy from all firearm models
-func GetPartHierarchy(c *gin.Context) {
-	// Fetch all firearm models
-	var models []models.FirearmModel
-	if err := db.DB.Find(&models).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch firearm models"})
-		return
-	}
-
-	// A map to store the hierarchy - using map to avoid duplicates
-	hierarchyMap := make(map[string]map[string]map[string]bool)
-
-	// Process each model's part structure
-	for _, model := range models {
-		if model.Parts == nil {
 			continue
 		}
-
-		// Cast model.Parts to a Go map
-		var partsMap map[string]interface{}
-		if err := json.Unmarshal(model.Parts, &partsMap); err != nil {
-			continue // Skip models with invalid JSON
-		}
-
-		// Process the top-level categories (assemblies)
-		for assembly, details := range partsMap {
-			if _, exists := hierarchyMap[assembly]; !exists {
-				hierarchyMap[assembly] = make(map[string]map[string]bool)
-			}
-
-			// Extract sub-parts
-			if detailsMap, ok := details.(map[string]interface{}); ok {
-				if subParts, exists := detailsMap["sub_parts"]; exists {
-					if subPartsMap, ok := subParts.(map[string]interface{}); ok {
-						// Process second-level components
-						for component, componentDetails := range subPartsMap {
-							if _, exists := hierarchyMap[assembly][component]; !exists {
-								hierarchyMap[assembly][component] = make(map[string]bool)
-							}
-
-							// Extract third-level parts
-							if componentDetailsMap, ok := componentDetails.(map[string]interface{}); ok {
-								if subSubParts, exists := componentDetailsMap["sub_parts"]; exists {
-									if subSubPartsMap, ok := subSubParts.(map[string]interface{}); ok {
-										for subComponent := range subSubPartsMap {
-											hierarchyMap[assembly][component][subComponent] = true
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		modelNames = append(modelNames, modelName)
 	}
 
-	// Convert the map to a nested array structure suitable for the frontend
+	c.JSON(http.StatusOK, modelNames)
+}
+
+// GetPartHierarchy returns a hierarchical view of part categories
+// @Summary Get part hierarchy
+// @Description Get a hierarchical view of part categories
+// @Tags Parts
+// @Accept json
+// @Produce json
+// @Success 200 {array} PartItem
+// @Router /parts/hierarchy [get]
+func GetPartHierarchy(c *gin.Context) {
+	// This endpoint now uses the part_categories table instead of the legacy JSON structure
+
+	// PartItem represents a node in the part hierarchy
 	type PartItem struct {
 		Name     string     `json:"name"`
 		ID       string     `json:"id"`
 		Children []PartItem `json:"children,omitempty"`
 	}
 
-	var hierarchy []PartItem
-
-	// Process top-level assemblies
-	for assembly, components := range hierarchyMap {
-		assemblyItem := PartItem{
-			Name:     assembly,
-			ID:       slugify(assembly),
-			Children: []PartItem{},
-		}
-
-		// Process second-level components
-		for component, subComponents := range components {
-			componentItem := PartItem{
-				Name:     component,
-				ID:       slugify(component),
-				Children: []PartItem{},
-			}
-
-			// Process third-level sub-components
-			for subComponent := range subComponents {
-				subComponentItem := PartItem{
-					Name: subComponent,
-					ID:   slugify(subComponent),
-				}
-				componentItem.Children = append(componentItem.Children, subComponentItem)
-			}
-
-			// Sort sub-components by name
-			sort.Slice(componentItem.Children, func(i, j int) bool {
-				return componentItem.Children[i].Name < componentItem.Children[j].Name
-			})
-
-			assemblyItem.Children = append(assemblyItem.Children, componentItem)
-		}
-
-		// Sort components by name
-		sort.Slice(assemblyItem.Children, func(i, j int) bool {
-			return assemblyItem.Children[i].Name < assemblyItem.Children[j].Name
-		})
-
-		hierarchy = append(hierarchy, assemblyItem)
+	// Get all part categories with parent-child relationships
+	var categories []models.PartCategory
+	if err := db.DB.Preload("ChildCategories").Where("parent_category_id IS NULL").Find(&categories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch categories"})
+		return
 	}
 
-	// Sort top-level assemblies by name
-	sort.Slice(hierarchy, func(i, j int) bool {
-		return hierarchy[i].Name < hierarchy[j].Name
-	})
+	// Convert to the hierarchy format
+	var result []PartItem
 
-	// Add standalone categories that aren't part of assemblies
-	var categories []string
-	db.DB.Table("parts").Distinct().Pluck("category", &categories)
-
-	// Add categories that aren't already in the hierarchy
+	// Build the category tree
 	for _, category := range categories {
-		if category == "" {
-			continue
+		item := PartItem{
+			Name: category.Name,
+			ID:   slugify(category.Name),
 		}
 
-		// Check if this category is already included as an assembly
-		found := false
-		for _, item := range hierarchy {
-			if item.Name == category {
-				found = true
-				break
+		// Process child categories
+		if len(category.ChildCategories) > 0 {
+			for _, child := range category.ChildCategories {
+				childItem := PartItem{
+					Name: child.Name,
+					ID:   slugify(child.Name),
+				}
+
+				// Get any third-level categories
+				var grandchildren []models.PartCategory
+				if err := db.DB.Where("parent_category_id = ?", child.ID).Find(&grandchildren).Error; err == nil && len(grandchildren) > 0 {
+					for _, grandchild := range grandchildren {
+						grandchildItem := PartItem{
+							Name: grandchild.Name,
+							ID:   slugify(grandchild.Name),
+						}
+						childItem.Children = append(childItem.Children, grandchildItem)
+					}
+				}
+
+				item.Children = append(item.Children, childItem)
 			}
 		}
 
-		if !found {
-			hierarchy = append(hierarchy, PartItem{
-				Name: category,
-				ID:   slugify(category),
-			})
-		}
+		result = append(result, item)
 	}
 
-	c.JSON(http.StatusOK, hierarchy)
+	c.JSON(http.StatusOK, result)
 }
 
 // Helper function to convert a string to a slug ID
