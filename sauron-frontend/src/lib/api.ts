@@ -731,41 +731,20 @@ export async function getPartsByCategoryId(categoryId: number): Promise<Part[]> 
   }
 }
 
-// Fetch categories for a specific firearm model
+// Fetch categories for a specific firearm model using the proper part_categories tables
 export async function getFirearmModelCategories(
   modelId: number, 
-  required: boolean | null = null
+  required: boolean | null = null,
+  recursive: boolean = true
 ): Promise<PartCategory[]> {
   try {
-    // First try the new endpoint structure
-    try {
-      // The new endpoint that uses the structured part_categories and firearm_model_part_categories tables
-      let url = `${API_BASE_URL}/part-categories/firearm/${modelId}`;
-      if (required !== null) {
-        url += `?required=${required}`;
-      }
-      
-      console.log(`Fetching firearm model categories from new endpoint: ${url}`);
-      const response = await fetch(url);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`Successfully retrieved ${data.length} categories from new endpoint`);
-        return data;
-      }
-      
-      console.warn(`New endpoint returned status ${response.status}, falling back to legacy endpoint`);
-    } catch (newEndpointError) {
-      console.warn('Error using new endpoint, falling back to legacy endpoint:', newEndpointError);
-    }
-    
-    // Fallback to legacy endpoint
-    let url = `${API_BASE_URL}/firearm-models/${modelId}/categories`;
+    // Use the proper endpoint that connects to the part_categories and firearm-model-part-categories tables
+    let url = `${API_BASE_URL}/part-categories/firearm/${modelId}?recursive=${recursive}`;
     if (required !== null) {
-      url += `?required=${required}`;
+      url += `&required=${required}`;
     }
     
-    console.log(`Falling back to legacy endpoint: ${url}`);
+    console.log(`Fetching firearm model categories from part-categories endpoint: ${url}`);
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -773,7 +752,24 @@ export async function getFirearmModelCategories(
     }
     
     const data = await response.json();
-    console.log(`Retrieved ${data.length} categories from legacy endpoint`);
+    console.log(`Successfully retrieved ${data.length} categories using proper part_categories endpoint`);
+    
+    // Process data to ensure hierarchical relationships are clear
+    if (data.length > 0) {
+      // Log the structure of a sample item to help with debugging
+      console.log('Sample category structure:', data[0]);
+      
+      // Check if we're receiving the proper hierarchical data
+      const hasChildCategories = data.some((cat: PartCategory) => 
+        (cat.child_categories && cat.child_categories.length > 0) || 
+        (cat.ChildCategories && cat.ChildCategories.length > 0)
+      );
+      
+      if (!hasChildCategories && recursive) {
+        console.warn('Received data does not contain child_categories property despite recursive=true');
+      }
+    }
+    
     return data;
   } catch (error) {
     console.error(`Error fetching categories for firearm model with ID ${modelId}:`, error);
@@ -806,4 +802,32 @@ export function usePartCategories(recursive: boolean = false) {
   }, [recursive]);
 
   return { categories, loading, error };
+}
+
+// Fetch complete hierarchical structure of categories for a specific firearm model
+export async function getFirearmModelCategoriesHierarchy(modelId: number): Promise<PartCategory[]> {
+  try {
+    // Use the dedicated endpoint that returns a complete hierarchy for a firearm model
+    const url = `${API_BASE_URL}/firearm-models/${modelId}/categories-hierarchy`;
+    
+    console.log(`Fetching complete category hierarchy for firearm model: ${url}`);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch hierarchical categories: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Successfully retrieved hierarchical categories: ${data.length} top-level categories`);
+    
+    // Process data to ensure is_required flag is properly set
+    if (data.length > 0) {
+      console.log('Sample category structure:', JSON.stringify(data[0], null, 2));
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching hierarchical categories for firearm model with ID ${modelId}:`, error);
+    throw error; // Rethrow to allow proper error handling in the component
+  }
 } 

@@ -14,7 +14,8 @@ import {
   Part, 
   FirearmModel,
   PartCategory,
-  getFirearmModelCategories
+  getFirearmModelCategories,
+  getFirearmModelCategoriesHierarchy
 } from '@/lib/api';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { 
@@ -105,36 +106,49 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       console.log(`Loaded ${parts.length} available parts`);
       setAvailableParts(parts);
       
-      // Fetch model categories using the new API (if available)
+      // Fetch hierarchical part categories data for this firearm model
       try {
-        console.log(`Fetching categories for firearm model ID: ${firearmId}`);
-        const categories = await getFirearmModelCategories(parseInt(firearmId));
-        console.log(`Loaded ${categories.length} model categories:`, categories);
+        console.log(`Fetching hierarchical categories for firearm model ID: ${firearmId}`);
+        const hierarchicalCategories = await getFirearmModelCategoriesHierarchy(parseInt(firearmId));
+        console.log(`Loaded ${hierarchicalCategories.length} model categories with hierarchy`);
         
-        if (categories && categories.length > 0) {
-          setModelCategories(categories);
+        if (hierarchicalCategories && hierarchicalCategories.length > 0) {
+          setModelCategories(hierarchicalCategories);
           
-          // Print the category IDs for debugging
-          const categoryIds = categories.map(c => c.id).join(', ');
-          console.log(`Category IDs: ${categoryIds}`);
+          // Debug logging for hierarchical structure
+          const countTotalCategories = (categories: PartCategory[]): number => {
+            return categories.reduce((count, cat) => {
+              const childCount = cat.child_categories ? countTotalCategories(cat.child_categories) : 0;
+              return count + 1 + childCount;
+            }, 0);
+          };
           
-          // Log the top-level categories
-          const topLevel = categories.filter(c => !c.parent_category_id);
-          console.log(`Found ${topLevel.length} top-level categories:`, 
-            topLevel.map(c => `${c.name} (ID: ${c.id})`));
+          const totalCategories = countTotalCategories(hierarchicalCategories);
+          console.log(`Total categories in hierarchy: ${totalCategories}`);
+          
+          // Log category relationship tree
+          const logHierarchy = (category: PartCategory, depth = 0): void => {
+            const indent = '  '.repeat(depth);
+            const requiredStatus = category.is_required ? 'Required' : 'Optional';
+            console.log(`${indent}- ${category.name} (ID: ${category.id}, ${requiredStatus})`);
             
-          // Log child categories
-          categories.forEach(cat => {
-            if (cat.parent_category_id) {
-              const parent = categories.find(c => c.id === cat.parent_category_id);
-              console.log(`Category "${cat.name}" (ID: ${cat.id}) is a child of "${parent?.name || 'Unknown'}" (ID: ${cat.parent_category_id})`);
+            if (category.child_categories && category.child_categories.length > 0) {
+              console.log(`${indent}  Children: ${category.child_categories.length}`);
+              category.child_categories.forEach(child => logHierarchy(child, depth + 1));
             }
-          });
+          };
+          
+          console.log('Category hierarchy:');
+          hierarchicalCategories.forEach(cat => logHierarchy(cat));
         } else {
-          console.warn('No categories returned for this firearm model');
+          console.warn('No hierarchical categories returned for this firearm model');
         }
-      } catch (categoryError) {
-        console.warn('Could not load model categories, falling back to legacy schema:', categoryError);
+      } catch (error) {
+        console.error('Error loading hierarchical categories:', error);
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : 'Unknown error loading part categories';
+        setError(new Error(`Failed to load component structure: ${errorMessage}`));
       }
       
       // Check if we have a saved state for this firearm
@@ -169,13 +183,18 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     }
   }
 
-  // Build component structure when firearmModel or modelCategories or availableParts change
+  // Build component structure when firearmModel, modelCategories, and availableParts change
   useEffect(() => {
-    if (firearmModel && availableParts.length > 0) {
-      console.log(`Rebuilding component structure - model: ${firearmModel.name}, categories: ${modelCategories?.length || 0}, parts: ${availableParts.length}`);
+    if (
+      firearmModel && 
+      modelCategories && 
+      modelCategories.length > 0 && 
+      availableParts.length > 0
+    ) {
+      console.log('Data changed - rebuilding component structure');
       buildComponentStructure();
     }
-  }, [firearmModel, modelCategories, availableParts]);
+  }, [firearmModel, JSON.stringify(modelCategories), availableParts.length]);
 
   // Trigger buildComponentStructure when all dependencies are loaded but no structure exists
   useEffect(() => {
@@ -224,6 +243,32 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     }
   }, [componentStructure]);
 
+  // Enhanced debugging for categories
+  useEffect(() => {
+    if (modelCategories && modelCategories.length > 0) {
+      console.log("Full category data for debugging:");
+      modelCategories.forEach(cat => {
+        const parentCat = cat.parent_category_id 
+          ? modelCategories.find(p => p.id === cat.parent_category_id) 
+          : null;
+        console.log(`Category: ${cat.name} (ID: ${cat.id}), Parent: ${parentCat ? `${parentCat.name} (ID: ${parentCat.id})` : 'None'}`);
+      });
+      
+      // Specifically check for Bolt and BCG relationship
+      const bcg = modelCategories.find(cat => cat.name === 'Bolt Carrier Group');
+      const bolt = modelCategories.find(cat => cat.name === 'Bolt');
+      
+      if (bcg && bolt) {
+        console.log(`BCG: ID=${bcg.id}, Bolt: ID=${bolt.id}, Bolt's Parent ID=${bolt.parent_category_id}`);
+        if (bolt.parent_category_id !== bcg.id) {
+          console.warn(`⚠️ Bolt's parent_category_id (${bolt.parent_category_id}) doesn't match BCG's ID (${bcg.id})`);
+        }
+      } else {
+        console.warn(`⚠️ Unable to find both BCG and Bolt categories`);
+      }
+    }
+  }, [modelCategories]);
+
   // Build component structure based on the model requirements and available parts
   const buildComponentStructure = async () => {
     console.log('Building component structure for model:', firearmModel?.name, `(ID: ${firearmModel?.id})`);
@@ -234,8 +279,14 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       return;
     }
     
+    if (!modelCategories || modelCategories.length === 0) {
+      console.warn('No part categories available for this model, cannot build structure');
+      setComponentStructure([]);
+      return;
+    }
+    
     const allParts = availableParts.slice();
-    console.log(`Processing ${allParts.length} available parts`);
+    console.log(`Processing ${allParts.length} available parts against ${modelCategories.length} part categories`);
     
     // Debug part category distribution
     const partCategoryCounts: Record<number, number> = {};
@@ -245,52 +296,74 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       }
     });
     
-    console.log('Parts by category ID:', partCategoryCounts);
-    
     const components: ComponentItem[] = [];
     let nextComponentId = 1;
     
-    // Check if we can use the new schema (part categories)
-    if (modelCategories && modelCategories.length > 0) {
-      console.log(`Using new schema with ${modelCategories.length} part categories`);
+    // Check if we have hierarchical data from the backend
+    const hasHierarchicalData = modelCategories.some(cat => 
+      cat.child_categories && cat.child_categories.length > 0
+    );
+    
+    console.log(`Building component tree using ${hasHierarchicalData ? 'hierarchical' : 'flat'} data structure`);
+    
+    if (hasHierarchicalData) {
+      // Process hierarchical data from backend
+      console.log('Using hierarchical data from backend');
       
-      // Organize parts by category_id for easy lookup
-      const partsByCategoryId: Record<number, Part[]> = {};
-      
-      allParts.forEach(part => {
-        if (part.part_category_id) {
-          if (!partsByCategoryId[part.part_category_id]) {
-            partsByCategoryId[part.part_category_id] = [];
-          }
-          partsByCategoryId[part.part_category_id].push(part);
+      // Recursive function to build components from hierarchical categories
+      const buildFromHierarchy = (category: PartCategory, parentId?: number): ComponentItem => {
+        // Use is_required from the API response
+        const isRequired = category.is_required || false;
+        
+        console.log(`Building component for ${category.name} (ID: ${category.id}, Required: ${isRequired})`);
+        
+        // Find parts that match this category ID
+        const matchingParts = allParts.filter(part => part.part_category_id === category.id);
+        console.log(`Found ${matchingParts.length} parts for category ${category.name}`);
+        
+        // Create component item for this category
+        const component: ComponentItem = {
+          id: nextComponentId++,
+          name: category.name,
+          description: category.description || '',
+          category: category.name,
+          subcategory: '',
+          part_category_id: category.id,
+          part_category: category,
+          isRequired,
+          isPrebuilt: false,
+          selectedPart: null,
+          parentId,
+          subComponents: [],
+          partData: matchingParts[0] || {} as Part
+        };
+        
+        // Process child categories directly from the hierarchy
+        const childCategories = category.child_categories || [];
+        
+        if (childCategories.length > 0) {
+          console.log(`Processing ${childCategories.length} child categories for ${category.name}`);
+          component.subComponents = childCategories.map(child => 
+            buildFromHierarchy(child, component.id)
+          );
         }
-      });
+        
+        return component;
+      };
       
-      // Log categories with parts for debugging
-      Object.keys(partsByCategoryId).forEach(categoryId => {
-        const numId = parseInt(categoryId);
-        const category = modelCategories.find(c => c.id === numId);
-        console.log(`Category ID ${categoryId} (${category?.name || 'Unknown'}): ${partsByCategoryId[numId].length} parts`);
-      });
-      
-      // Create a map of category IDs to their data for faster lookup
-      const categoryMap: Record<number, PartCategory> = {};
-      modelCategories.forEach(cat => {
-        categoryMap[cat.id] = cat;
-      });
-      
-      // Process top-level categories first (those with null parent_category_id)
-      const topLevelCategories = modelCategories.filter(cat => !cat.parent_category_id);
-      console.log(`Found ${topLevelCategories.length} top-level categories:`, 
-        topLevelCategories.map(c => `${c.name} (ID: ${c.id})`));
-      
-      if (topLevelCategories.length === 0) {
-        console.warn('No top-level categories found, cannot build structure');
-        setComponentStructure([]);
-        return;
+      // Process top-level categories from hierarchical data
+      for (const topCategory of modelCategories) {
+        components.push(buildFromHierarchy(topCategory));
       }
-
-      // Recursive function to build component structure with unlimited depth
+    } else {
+      // Fallback to building the hierarchy manually from parent_category_id relationships
+      console.log('Building hierarchy manually from flat category list');
+      
+      // Find the top-level categories (those without parent_category_id)
+      const topLevelCategories = modelCategories.filter(cat => !cat.parent_category_id);
+      console.log(`Found ${topLevelCategories.length} top-level categories to process`);
+      
+      // Recursive function to build the component hierarchy
       const buildCategoryTree = (category: PartCategory, parentId?: number): ComponentItem => {
         const isRequired = category.is_required || false;
         
@@ -305,8 +378,8 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
           id: nextComponentId++,
           name: category.name,
           description: category.description || '',
-          category: category.name, // Keep legacy field for backward compatibility
-          subcategory: '', // Keep legacy field for backward compatibility
+          category: category.name,
+          subcategory: '',
           part_category_id: category.id,
           part_category: category,
           isRequired,
@@ -314,112 +387,71 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
           selectedPart: null,
           parentId,
           subComponents: [],
-          partData: matchingParts[0] || {} as Part // Use first matching part if available
+          partData: matchingParts[0] || {} as Part
         };
         
-        // Find all child categories and process them
-        const childCategories = modelCategories.filter(cat => 
-          cat.parent_category_id === category.id
-        );
+        // Find child categories for this category
+        const childCategories = modelCategories.filter(cat => cat.parent_category_id === category.id);
         
         if (childCategories.length > 0) {
-          console.log(`Category ${category.name} (ID: ${category.id}) has ${childCategories.length} child categories:`, 
-            childCategories.map(c => `${c.name} (ID: ${c.id})`));
+          console.log(`Category ${category.name} has ${childCategories.length} child categories`);
           
-          // Process all children recursively
+          // Process child categories recursively
           component.subComponents = childCategories.map(child => 
             buildCategoryTree(child, component.id)
           );
+        } else {
+          console.log(`Category ${category.name} has no child categories`);
+          
+          // Special case handling for known relationships
+          if (category.name === 'Bolt Carrier Group') {
+            const boltCategory = modelCategories.find(cat => cat.name === 'Bolt');
+            if (boltCategory && !component.subComponents.some(c => c.name === 'Bolt')) {
+              console.log(`Special case: Adding Bolt as a child of BCG`);
+              component.subComponents.push(buildCategoryTree(boltCategory, component.id));
+            }
+          }
         }
         
         return component;
       };
       
-      // Build the complete tree starting from each top-level category
+      // Process top-level categories
       for (const topCategory of topLevelCategories) {
         components.push(buildCategoryTree(topCategory));
       }
-      
-      // Save the component structure
-      console.log(`Built component structure with ${components.length} top-level components`);
-      setComponentStructure(components);
-      // Initialize all top-level components as expanded
-      setExpandedItems(components.map(c => c.id));
-    } 
-    // Fallback to legacy schema
-    else if (firearmModel.parts) {
-      console.log('Using legacy schema with firearmModel.parts');
-      
-      // Organize parts by category for easier lookup
-      const partsByCategory: Record<string, Part[]> = {};
-      
-      allParts.forEach(part => {
-        if (!part.category) return;
-        
-        if (!partsByCategory[part.category]) {
-          partsByCategory[part.category] = [];
-        }
-        partsByCategory[part.category].push(part);
-        
-        // Also add to subcategory if it exists
-        if (part.subcategory) {
-          if (!partsByCategory[part.subcategory]) {
-            partsByCategory[part.subcategory] = [];
-          }
-          partsByCategory[part.subcategory].push(part);
-        }
-      });
-      
-      console.log('Parts organized by category:', Object.keys(partsByCategory));
-      
-      // Extract main categories from the model.parts structure
-      const mainCategories = Object.keys(firearmModel.parts || {});
-      console.log('Main categories from model:', mainCategories);
-      
-      // Process each main category using the existing code
-      for (const category of mainCategories) {
-        const categoryDetails = firearmModel.parts[category];
-        const isRequired = categoryDetails.type === 'required';
-        
-        console.log(`Processing category: ${category}, required: ${isRequired}`);
-        
-        // Create component for this category
-        const component: ComponentItem = {
-          id: nextComponentId++,
-          name: category,
-          description: '',
-          category,
-          subcategory: '',
-          isRequired,
-          isPrebuilt: false,
-          selectedPart: null,
-          subComponents: [],
-          partData: {} as Part // This is a placeholder
-        };
-        
-        // Check if there are sub-parts defined
-        if (categoryDetails.sub_parts && Object.keys(categoryDetails.sub_parts).length > 0) {
-          console.log(`Category ${category} has sub-parts:`, Object.keys(categoryDetails.sub_parts));
-          
-          // Process sub-parts and create child components
-          component.subComponents = processSubParts(
-            categoryDetails.sub_parts, 
-            component.id, 
-            partsByCategory,
-            isRequired
-          );
-        }
-        
-        components.push(component);
-      }
-    } else {
-      console.warn('No model.parts structure found, using empty component structure');
     }
     
-    console.log('Final component structure:', components);
+    // Log the full component structure for debugging
+    const logComponentStructure = (component: ComponentItem, level = 0) => {
+      const indent = '  '.repeat(level);
+      console.log(`${indent}- ${component.name} (ID: ${component.id})`);
+      if (component.subComponents && component.subComponents.length > 0) {
+        component.subComponents.forEach(child => logComponentStructure(child, level + 1));
+      }
+    };
+    
+    console.log('Full component structure:');
+    components.forEach(component => logComponentStructure(component));
+    
+    // Function to get all component IDs that have children, for auto-expansion
+    const getAllComponentIdsWithChildren = (components: ComponentItem[]): number[] => {
+      return components.flatMap(component => {
+        if (component.subComponents && component.subComponents.length > 0) {
+          return [component.id, ...getAllComponentIdsWithChildren(component.subComponents)];
+        }
+        return [];
+      });
+    };
+    
+    // Save the component structure
+    console.log(`Built component structure with ${components.length} top-level components`);
     setComponentStructure(components);
-    // Initialize all top-level components as expanded
-    setExpandedItems(components.map(c => c.id));
+    
+    // Auto-expand components with children
+    const componentsWithChildren = getAllComponentIdsWithChildren(components);
+    console.log(`Auto-expanding ${componentsWithChildren.length} components with children`);
+    setExpandedItems(componentsWithChildren);
   };
 
   // Helper function to process sub-parts from the model schema
@@ -521,11 +553,48 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     return result;
   };
 
-  // Toggle expansion of an assembly
+  // Toggle component expansion state
   const toggleExpand = (id: number) => {
-    setExpandedItems(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    console.log(`Toggling expand state for component ID: ${id}`);
+    setExpandedItems(prevItems => {
+      if (prevItems.includes(id)) {
+        // If we're collapsing, also collapse all children
+        const collapseChildrenRecursively = (itemId: number): number[] => {
+          const component = findComponentById(componentStructure, itemId);
+          if (!component || !component.subComponents) return [itemId];
+          
+          const childIds = component.subComponents.flatMap(child => {
+            return [child.id, ...collapseChildrenRecursively(child.id)];
+          });
+          
+          return [itemId, ...childIds];
+        };
+        
+        const itemsToCollapse = collapseChildrenRecursively(id);
+        console.log(`Collapsing items: ${itemsToCollapse.join(', ')}`);
+        
+        return prevItems.filter(item => !itemsToCollapse.includes(item));
+      } else {
+        // If expanding, just add this item (children get expanded when clicked)
+        return [...prevItems, id];
+      }
+    });
+  };
+  
+  // Helper function to find a component by ID
+  const findComponentById = (items: ComponentItem[], id: number): ComponentItem | null => {
+    for (const item of items) {
+      if (item.id === id) {
+        return item;
+      }
+      
+      if (item.subComponents && item.subComponents.length > 0) {
+        const found = findComponentById(item.subComponents, id);
+        if (found) return found;
+      }
+    }
+    
+    return null;
   };
 
   // Handle selection of a part
@@ -996,6 +1065,54 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
     setComponentStructure([...componentStructure]);
   };
 
+  // Verify if the backend API properly supports hierarchical retrieval
+  useEffect(() => {
+    const verifyBackendCapabilities = async () => {
+      try {
+        // Check the hierarchical endpoint
+        console.log('Verifying backend hierarchical capabilities...');
+        const hierarchicalCategories = await getFirearmModelCategoriesHierarchy(parseInt(firearmId));
+        
+        if (hierarchicalCategories.length === 0) {
+          console.warn('⚠️ No categories returned from hierarchical endpoint');
+          return;
+        }
+        
+        // Check if we have proper child_categories structure
+        const hasChildCategories = hierarchicalCategories.some(cat => 
+          cat.child_categories && cat.child_categories.length > 0
+        );
+        
+        if (hasChildCategories) {
+          console.log('✅ Backend properly supports hierarchical category retrieval');
+          
+          // Check for specific relationships we care about
+          const bcg = hierarchicalCategories.find(cat => cat.name === 'Bolt Carrier Group');
+          if (bcg) {
+            const bcgChildren = bcg.child_categories || [];
+            console.log(`Bolt Carrier Group has ${bcgChildren.length} children: ${bcgChildren.map(c => c.name).join(', ')}`);
+            
+            const hasBolt = bcgChildren.some(c => c.name === 'Bolt');
+            if (hasBolt) {
+              console.log('✅ Bolt is properly linked as a child of Bolt Carrier Group');
+            } else {
+              console.warn('⚠️ Bolt is not linked as a child of Bolt Carrier Group');
+            }
+          }
+        } else {
+          console.warn('⚠️ Backend returns categories but without proper child_categories structure');
+        }
+      } catch (error) {
+        console.error('Failed to verify backend capabilities:', error);
+      }
+    };
+    
+    // Only run this check in development mode
+    if (process.env.NODE_ENV === 'development') {
+      verifyBackendCapabilities();
+    }
+  }, [firearmId]);
+
   // Render loading state
   if (loading) {
     return (
@@ -1072,38 +1189,48 @@ export default function BuilderWorksheet({ firearmId, onBuildUpdate }: BuilderWo
       const isFulfilledByAssembly = component.selectedPart && 
                                    (component.selectedPart as any).fulfilled_by_assembly === true;
       
+      // Determine the indentation class for this level
+      // Fixed indentation classes that will be recognized by Tailwind
+      let indentClass = '';
+      if (level === 1) indentClass = 'ml-4';
+      else if (level === 2) indentClass = 'ml-8';
+      else if (level === 3) indentClass = 'ml-12';
+      else if (level >= 4) indentClass = 'ml-16';
+      
       // Main component row
       rows.push(
         <tr key={componentKey} className={level === 0 ? "bg-gray-50 dark:bg-gray-800" : "bg-white dark:bg-gray-700"}>
           <td className="px-4 py-3 flex items-center">
-            {hasSubComponents ? (
-              <button 
-                onClick={() => toggleExpand(component.id)}
-                className="mr-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                {expandedItems.includes(component.id) ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
+            <div className={`flex items-center ${indentClass}`}>
+              {hasSubComponents ? (
+                <button 
+                  onClick={() => toggleExpand(component.id)}
+                  className="mr-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  {expandedItems.includes(component.id) ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </button>
+              ) : (
+                <div className="w-6 mr-2" /> 
+              )}
+              
+              <span className={`${level === 0 ? "font-medium" : ""} ${isFulfilledByAssembly ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                {component.name}
+                {hasAssemblyOption && !isFulfilledByAssembly && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs font-normal">
+                    (Assembly Available)
+                  </span>
                 )}
-              </button>
-            ) : (
-              <div className="w-6 ml-1" /> 
-            )}
-            
-            <span className={`${level > 0 ? "ml-" + (level * 4) : "font-medium"} ${isFulfilledByAssembly ? "text-blue-600 dark:text-blue-400" : ""}`}>
-              {component.name}
-              {hasAssemblyOption && !isFulfilledByAssembly && (
-                <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs font-normal">
-                  (Assembly Available)
-                </span>
-              )}
-              {isFulfilledByAssembly && (
-                <span className="ml-2 text-xs font-normal">
-                  (From Assembly)
-                </span>
-              )}
-            </span>
+                {isFulfilledByAssembly && (
+                  <span className="ml-2 text-xs font-normal">
+                    (From Assembly)
+                  </span>
+                )}
+              </span>
+            </div>
           </td>
           <td className="px-4 py-3 text-center">
             {component.isRequired ? (

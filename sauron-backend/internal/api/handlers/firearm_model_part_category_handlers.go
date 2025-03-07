@@ -225,3 +225,146 @@ func RemoveCategoryFromFirearmModel(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// @Summary Get hierarchical part categories for a firearm model
+// @Description Retrieves a complete hierarchical structure of part categories for a specific firearm model
+// @Tags Firearm Models
+// @Accept json
+// @Produce json
+// @Param id path int true "Firearm Model ID"
+// @Param required query bool false "Filter by required status (true=required, false=optional, omit=both)"
+// @Success 200 {array} CategoryWithRequiredStatus
+// @Router /firearm-models/{id}/categories-hierarchy [get]
+func GetFirearmModelCategoriesHierarchy(c *gin.Context) {
+	modelID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid firearm model ID"})
+		return
+	}
+
+	// Check if the model exists
+	var model models.FirearmModel
+	if err := db.DB.First(&model, modelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Firearm model not found"})
+		return
+	}
+
+	// Parse optional required status filter
+	var requiredFilter *bool
+	requiredParam := c.Query("required")
+	if requiredParam != "" {
+		required := requiredParam == "true"
+		requiredFilter = &required
+	}
+
+	// Define the response type that includes the is_required flag
+	type CategoryWithRequiredStatus struct {
+		models.PartCategory
+		IsRequired      bool                         `json:"is_required"`
+		ChildCategories []CategoryWithRequiredStatus `json:"child_categories,omitempty"`
+	}
+
+	// Step 1: Get all part categories assigned to this firearm model with their required status
+	var modelCategoryRelations []models.FirearmModelPartCategory
+	query := db.DB.Where("firearm_model_id = ?", modelID)
+
+	// Apply required filter if specified
+	if requiredFilter != nil {
+		query = query.Where("is_required = ?", *requiredFilter)
+	}
+
+	if err := query.Find(&modelCategoryRelations).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch model category relations"})
+		return
+	}
+
+	if len(modelCategoryRelations) == 0 {
+		c.JSON(http.StatusOK, []CategoryWithRequiredStatus{})
+		return
+	}
+
+	// Create a map of category ID to required status for quick lookup
+	categoryIsRequired := make(map[int]bool)
+	var categoryIDs []int
+	for _, relation := range modelCategoryRelations {
+		categoryIDs = append(categoryIDs, relation.PartCategoryID)
+		categoryIsRequired[relation.PartCategoryID] = relation.IsRequired
+	}
+
+	// Step 2: Get all categories
+	var allCategories []models.PartCategory
+	if err := db.DB.Find(&allCategories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch all categories"})
+		return
+	}
+
+	// Create a map for fast category lookup
+	categoryByID := make(map[int]models.PartCategory)
+	for _, cat := range allCategories {
+		categoryByID[cat.ID] = cat
+	}
+
+	// Function to build the category hierarchy with required status
+	var buildCategoryHierarchy func(categoryID int, isRequired bool) *CategoryWithRequiredStatus
+	buildCategoryHierarchy = func(categoryID int, isRequired bool) *CategoryWithRequiredStatus {
+		category, exists := categoryByID[categoryID]
+		if !exists {
+			return nil
+		}
+
+		// Create the response structure with the required status
+		result := CategoryWithRequiredStatus{
+			PartCategory:    category,
+			IsRequired:      isRequired,
+			ChildCategories: []CategoryWithRequiredStatus{},
+		}
+
+		// Find child categories
+		for _, cat := range allCategories {
+			if cat.ParentCategoryID != nil && *cat.ParentCategoryID == categoryID {
+				// Check if this child category is directly assigned to the model
+				childIsRequired, childAssigned := categoryIsRequired[cat.ID]
+
+				// If not directly assigned, inherit parent's required status
+				if !childAssigned {
+					childIsRequired = isRequired
+				}
+
+				// Recursively build the child's hierarchy
+				childResult := buildCategoryHierarchy(cat.ID, childIsRequired)
+				if childResult != nil {
+					result.ChildCategories = append(result.ChildCategories, *childResult)
+				}
+			}
+		}
+
+		return &result
+	}
+
+	// Start with top-level categories (those without parent or with parent outside the model)
+	var result []CategoryWithRequiredStatus
+	for _, relation := range modelCategoryRelations {
+		category, exists := categoryByID[relation.PartCategoryID]
+		if !exists {
+			continue
+		}
+
+		// Check if this is a top-level category (no parent or parent not in the model)
+		isTopLevel := category.ParentCategoryID == nil
+		if !isTopLevel {
+			// Check if parent is assigned to this model
+			_, parentAssigned := categoryIsRequired[*category.ParentCategoryID]
+			isTopLevel = !parentAssigned
+		}
+
+		if isTopLevel {
+			// Build hierarchy starting from this top-level category
+			categoryHierarchy := buildCategoryHierarchy(category.ID, relation.IsRequired)
+			if categoryHierarchy != nil {
+				result = append(result, *categoryHierarchy)
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, result)
+}

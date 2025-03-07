@@ -32,6 +32,9 @@ func SetupRouter() *gin.Engine {
 	router.PUT("/firearm-models/:id/categories/:category_id", handlers.UpdateFirearmModelCategoryRelation)
 	router.DELETE("/firearm-models/:id/categories/:category_id", handlers.RemoveCategoryFromFirearmModel)
 
+	// NEW: Hierarchical categories endpoint
+	router.GET("/firearm-models/:id/categories-hierarchy", handlers.GetFirearmModelCategoriesHierarchy)
+
 	// NEW: Alternative endpoint for part categories by firearm - maps to the same handler
 	router.GET("/part-categories/firearm/:id", handlers.GetFirearmModelCategories)
 
